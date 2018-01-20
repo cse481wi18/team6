@@ -1,0 +1,3 @@
+float64 delta_pan
+float64 delta_tilt
+bool focus_hand

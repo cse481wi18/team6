@@ -2,7 +2,8 @@
 
 import fetch_api
 import rospy
-from web_teleop.srv import SetTorso, SetTorsoResponse
+from web_teleop.srv import SetTorso, SetTorsoResponse, MoveHead, MoveHeadResponse
+from joint_state_reader import JointStateReader
 
 
 def wait_for_time():
@@ -15,11 +16,23 @@ def wait_for_time():
 class ActuatorServer(object):
     def __init__(self):
         self._torso = fetch_api.Torso()
+        self._head = fetch_api.Head()
+        self._reader = JointStateReader()
 
     def handle_set_torso(self, request):
         self._torso.set_height(request.height)
         return SetTorsoResponse()
 
+    def handle_move_head(self, move_head_request):
+        if (move_head_request.focus_hand):
+            self._head.look_at('wrist_flex_link', 0, 0, 0)
+            return MoveHeadResponse()
+        else:
+            curr_pan = self._reader.get_joint('head_pan_joint')
+            curr_tilt = self._reader.get_joint('head_tilt_joint')
+            self._head.pan_tilt(curr_pan + move_head_request.delta_pan,
+                    curr_tilt + move_head_request.delta_tilt)
+            return MoveHeadResponse()
 
 def main():
     rospy.init_node('web_teleop_actuators')
@@ -27,6 +40,8 @@ def main():
     server = ActuatorServer()
     torso_service = rospy.Service('web_teleop/set_torso', SetTorso,
                                   server.handle_set_torso)
+    head_service = rospy.Service('web_teleop/move_head', MoveHead,
+                                  server.handle_move_head)
     rospy.spin()
 
 
