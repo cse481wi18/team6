@@ -46,4 +46,3 @@ class Arm(object):
         self._client.send_goal(goal)
         # TODO: Wait for result
         self._client.wait_for_result(rospy.Duration.from_sec(TIME_FROM_START))
-rospy.logerr('Not implemented.')
