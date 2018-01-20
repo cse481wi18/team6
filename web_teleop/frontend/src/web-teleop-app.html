@@ -91,20 +91,26 @@
         <div class="flex"></div>
         <paper-button
           on-down="_startForward"
-          on-up="_endBaseCommand"
-        >Forward</paper-button>
+          on-up="_endBaseCommand">Forward</paper-button>
         <div class="flex"></div>
       </div>
       <div class="layout horizontal">
-        <paper-button>Left</paper-button>
-        <paper-button>Back</paper-button>
-        <paper-button>Right</paper-button>
+        <paper-button
+          on-down="_startLeft"
+          on-up="_endBaseCommand">Left</paper-button>
+        <paper-button
+          on-down="_startBackward"
+          on-up="_endBaseCommand">Back</paper-button>
+        <paper-button
+          on-down="_startRight"
+          on-up="_endBaseCommand">Right</paper-button>
       </div>
     </div>
 
   </template>
 
   <script>
+    DIRECTIONS = {FORWARD: 0, BACKWARD: 1, LEFT: 2, RIGHT: 3};
     /**
      * @customElement
      * @polymer
@@ -158,28 +164,61 @@
         this.status = 'Error: ' + evt.detail;
       }
 
-      _startForward(evt) {
+      _setDirection(evt, direction) {
         evt.preventDefault(); // Prevent right-click menu from showing up after long press on mobile
-        this.status = 'Driving forward...';
+        this.status = 'Driving...';
         var baseTopic = this.$.baseTopic; // Get <ros-topic>
         if (this.baseCommand) {
           // The timer should not be set at this point, but clear it just in case
           clearInterval(this.baseCommand);
         }
+
+        var linearVelocity = 0;
+        var angularVelocity = 0;
+        console.log("DIRECTION = " + direction);
+        if (direction === DIRECTIONS.FORWARD) {
+            linearVelocity = 0.1;
+        } else if (direction === DIRECTIONS.BACKWARD) {
+            linearVelocity = -0.1;
+        } else if (direction === DIRECTIONS.LEFT) {
+            angularVelocity = 0.1;
+        } else if (direction === DIRECTIONS.RIGHT) {
+            angularVelocity = -0.1;
+        } else {
+            console.log("Unknown direction: " + direction);
+        }
+
         this.baseCommand = setInterval(function() {
           baseTopic.publish({
             linear: {
-              x: 0.1, // Set positive or negative meters/s to drive
+              x: linearVelocity, // Set positive or negative meters/s to drive
               y: 0,
               z: 0
             },
             angular: {
               x: 0,
               y: 0,
-              z: 0 // Set rads/s to turn
+              z: angularVelocity // Set rads/s to turn
             }
           });
         }, 10); // Run this function every 10ms, or approximately 100 times per second.
+      }
+
+      _startForward(evt) {
+        console.log("front");
+        this._setDirection(evt, DIRECTIONS.FORWARD);
+      }
+
+      _startBackward(evt) {
+        this._setDirection(evt, DIRECTIONS.BACKWARD);
+      }
+
+      _startLeft(evt) {
+        this._setDirection(evt, DIRECTIONS.LEFT);
+      }
+
+      _startRight(evt) {
+        this._setDirection(evt, DIRECTIONS.RIGHT);
       }
 
       _endBaseCommand(evt) {
