@@ -79,6 +79,24 @@
       service-type="web_teleop/MoveHead"
     ></ros-service>
 
+    <ros-service
+      id="jointService"
+      on-response="_handleJointSuccess"
+      on-fail="_handleJointError"
+      name="/web_teleop/move_arm"
+      ros="{{ros}}"
+      service-type="web_teleop/MoveArm"
+    ></ros-service>
+
+    <ros-service
+      id="gripService"
+      on-response="_handleGripSuccess"
+      on-fail="_handleGripError"
+      name="/web_teleop/set_grip"
+      ros="{{ros}}"
+      service-type="web_teleop/SetGrip"
+    ></ros-service>
+
     <h1>Fetch teleop</h1>
     [[status]]
 
@@ -120,8 +138,7 @@
         <div class="flex"></div>
         <iron-label>
             Velocity
-            <paper-slider min="0.1" max="1" step="0.01" editable
-            value="{{desiredVelocity}}"></paper-slider>
+            <paper-slider min="0.1" max="1" step="0.01" editable value="{{desiredVelocity}}"></paper-slider>
         </iron-label>
         <div class="flex"></div>
 
@@ -156,6 +173,26 @@
       </div>
     </div>
 
+    <div id="jointcontrol" class="layout vertical">
+      <div class="layout horizontal">
+            <!-- TODO set min and max -->
+            <paper-slider min="-1.6" max="1.6" step="0.01" editable value="{{jointPosition0}}"></paper-slider>
+            <paper-slider min="-1.2" max="1.5" step="0.01" editable value="{{jointPosition1}}"></paper-slider>
+            <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition2}}"></paper-slider>
+            <paper-slider min="-2.2" max="2.2" step="0.01" editable value="{{jointPosition3}}"></paper-slider>
+            <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition4}}"></paper-slider>
+            <paper-slider min="-2.1" max="2.1" step="0.01" editable value="{{jointPosition5}}"></paper-slider>
+            <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition6}}"></paper-slider>
+            <paper-button on-tap="_setArm">Set arm</paper-button>
+      </div>
+    </div>
+
+    <div class="layout horizontal center">
+      <paper-slider min="40" max="100" step="1" editable
+        value="{{desiredGripEffort}}"></paper-slider>
+      <paper-button on-tap="_setGrip">Grip</paper-button>
+      <paper-button on-tap="_setUngrip">Ungrip</paper-button>
+    </div>
 
   </template>
 
@@ -195,7 +232,7 @@
 
       _handleTorsoHeight(evt) {
         var msg = evt.detail;
-        console.log(msg);
+        //console.log(msg);
       }
 
       _round(val, precision) {
@@ -226,7 +263,7 @@
 
         var linearVelocity = 0;
         var angularVelocity = 0;
-        console.log("DIRECTION = " + direction);
+        console.log("DIRECTION = " + direction + 'velocity = ' + this.desiredVelocity);
         if (direction === DIRECTIONS.FORWARD) {
             linearVelocity = this.desiredVelocity;
         } else if (direction === DIRECTIONS.BACKWARD) {
@@ -239,6 +276,7 @@
             console.log("Unknown direction: " + direction);
         }
 
+        console.log('Lin vel = ' + linearVelocity + ' angular vel = ' + angularVelocity);
         this.baseCommand = setInterval(function() {
           baseTopic.publish({
             linear: {
@@ -342,6 +380,38 @@
       _endHeadCommand(evt) {
         this.status = 'Stopped changing view.';
         clearInterval(this.headCommand);
+      }
+
+      _handleJointSuccess(evt) {
+         this.status = 'Moved arm successfully';
+      }
+
+      _handleJointError(evt) {
+        this.status = 'Failed to move arm ' + evt.detail;
+      }
+
+      _setArm(evt) {
+        this.$.jointService.call({positions: [this.jointPosition0, this.jointPosition1, this.jointPosition2, this.jointPosition3, this.jointPosition4, this.jointPosition5, this.jointPosition6]});
+      }
+
+      _handleGripSuccess(evt) {
+        this.status = 'Grip successful!';
+      }
+
+      _handleGripError(evt) {
+        this.status = 'Failed to grip ' + evt.detail;
+      }
+
+      _setGrip(evt) {
+        this._setGripHelper(evt, true);
+      }
+
+      _setUngrip(evt) {
+        this._setGripHelper(evt, false);
+      }
+
+      _setGripHelper(evt, grip) {
+          this.$.gripService.call({effort: this.desiredGripEffort, grip: grip});
       }
 
       ready() {
