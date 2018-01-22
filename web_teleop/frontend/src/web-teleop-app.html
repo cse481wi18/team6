@@ -110,12 +110,14 @@
     </div>
 
     <div class="layout horizontal center">
+      <h3>Torso</h3>
       <paper-slider min="0" max="0.4" step="0.01" editable
         value="{{desiredTorsoHeight}}"></paper-slider>
       <paper-button on-tap="_setTorso">Set torso</paper-button>
     </div>
 
     <div id="driving" class="button-controller layout vertical">
+      <h3>Movement</h3>
       <div class="layout horizontal">
         <div class="flex"></div>
         <paper-button
@@ -176,12 +178,19 @@
     <div id="jointcontrol" class="layout vertical">
       <div class="layout horizontal">
             <!-- TODO set min and max -->
+            <label>Shoulder ↔️</label>
             <paper-slider min="-1.6" max="1.6" step="0.01" editable value="{{jointPosition0}}"></paper-slider>
+            <label>Shoulder ↕️</label>
             <paper-slider min="-1.2" max="1.5" step="0.01" editable value="{{jointPosition1}}"></paper-slider>
+            <label>Upper arm 🔄</label>
             <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition2}}"></paper-slider>
+            <label>Elbow ↕️</label>
             <paper-slider min="-2.2" max="2.2" step="0.01" editable value="{{jointPosition3}}"></paper-slider>
+            <label>Forearm 🔄</label>
             <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition4}}"></paper-slider>
+            <label>Wrist ↕️</label>
             <paper-slider min="-2.1" max="2.1" step="0.01" editable value="{{jointPosition5}}"></paper-slider>
+            <label>Wrist 🔄</label>
             <paper-slider min="-3" max="3" step="0.01" editable value="{{jointPosition6}}"></paper-slider>
             <paper-button on-tap="_setArm">Set arm</paper-button>
       </div>
@@ -411,7 +420,7 @@
       }
 
       _setGripHelper(evt, grip) {
-          this.$.gripService.call({effort: this.desiredGripEffort, grip: grip});
+        this.$.gripService.call({effort: this.desiredGripEffort, grip: grip});
       }
 
       ready() {
