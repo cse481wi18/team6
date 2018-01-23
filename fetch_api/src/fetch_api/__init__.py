@@ -4,3 +4,4 @@ from .base import Base
 from .gripper import Gripper
 from .torso import Torso
 from .head import Head
+from .nav_path import NavPath
