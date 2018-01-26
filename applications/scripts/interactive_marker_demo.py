@@ -1,19 +1,18 @@
 #!/usr/bin/env python
 
 import rospy
+import fetch_api
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, InteractiveMarkerFeedback, Marker
 
-def main():
-    rospy.init_node('interactive_marker_node')
-    wait_for_time()
-
-    server = InteractiveMarkerServer("simple_marker")
+def make_marker(server, x, y, z, marker_name):
     int_marker = InteractiveMarker()
-    int_marker.header.frame_id = "base_link"
-    int_marker.name = "my_marker"
+    int_marker.header.frame_id = "odom"
+    int_marker.name = marker_name
     int_marker.description = "Simple Click Control"
-    int_marker.pose.position.x = 1
+    int_marker.pose.position.x = x
+    int_marker.pose.position.y = y
+    int_marker.pose.position.z = z
     int_marker.pose.orientation.w = 1
 
     box_marker = Marker()
@@ -34,6 +33,17 @@ def main():
     int_marker.controls.append(button_control)
 
     server.insert(int_marker, handle_viz_input)
+
+
+def main():
+    rospy.init_node('interactive_marker_node')
+    wait_for_time()
+
+    server = InteractiveMarkerServer("simple_marker")
+
+    make_marker(server, 3, 1, 0, "my_marker1")
+    make_marker(server, 4.4, -2.8, "my_marker2")
+    make_marker(server, 1, 0, 0, "my_marker3")
     server.applyChanges()
     rospy.spin()
 
@@ -47,7 +57,9 @@ def wait_for_time():
 
 def handle_viz_input(input):
     if (input.event_type == InteractiveMarkerFeedback.BUTTON_CLICK):
-        rospy.loginfo(input.marker_name + ' was clicked.')
+        rospy.loginfo('{} was clicked at position ({}, {}, {})'.format(input.marker_name, input.pose.position.x, input.pose.position.y, input.pose.position.z))
+        base = fetch_api.Base()
+        base.goto_in_odom(input.pose.position)
     else:
         rospy.loginfo('Cannot handle this InteractiveMarker event')
 

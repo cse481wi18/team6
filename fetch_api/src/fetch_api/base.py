@@ -34,6 +34,28 @@ class Base(object):
     def _angular_dist(self, q1, q2):
         return abs((q1.z - q2.z) % (2 * math.pi))
 
+    def goto_in_odom(self, target_point):
+        """Moves the robot to the specified location in odom frame.
+
+            Args:
+                target_x, target_y: (x,y) of target location
+        """
+        while (self._latest_odom is None):
+            rospy.sleep(2.0)
+
+        cur_point = self._latest_odom.pose.pose.position
+        cur_angle = self._convert_quaternion_to_radian(
+                            self._latest_odom.pose.pose.orientation)
+
+        dx = target_point.x - cur_point.x
+        dy = target_point.y - cur_point.y
+        theta = math.atan2(dy, dx) % (2*math.pi)
+
+        # turn to face the target
+        self.turn(theta - cur_angle)
+        # move to target
+        self.go_forward(self._distance(cur_point, target_point))
+
     def go_forward(self, distance, speed=0.1):
         """Moves the robot a certain distance.
 
@@ -53,7 +75,7 @@ class Base(object):
             rospy.sleep(2.0)
 
         start = copy.deepcopy(self._latest_odom)
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(20)
 
         # TODO: CONDITION should check if the robot has traveled the desired distance
         # TODO: Be sure to handle the case where the distance is negative!
@@ -90,22 +112,6 @@ class Base(object):
         if dist_so_far >= (abs(angular_distance) % (2*math.pi)):
             return True
         return False
-
-    # def attempt2(self, start, angular_distance):
-    #     start_yaw = math.atan2(start.pose.pose.orientation.z) % (2*math.pi)
-    #     cur_yaw = math.atan2(self._latest_odom.pose.pose.orientation.z) % (2*math.pi)
-    #     end_yaw = (start_yaw + angular_distance) % (2*math.pi)
-
-    #     if abs(start_yaw - cur_yaw) < self.ANGULAR_DIST_THRESH * 0.1:
-    #         return False
-
-    #     print "c " + str(cur_yaw)
-
-    #     dist_left = cur_yaw - end_yaw
-    #     dist_left *= -1 if angular_distance < 0 else 1
-    #     dist_left %= (2*math.pi)
-    #     print "d " + str(dist_left) + "\n"
-    #     return abs(dist_left) < 0.1
 
     # Returns radian in range 0 to 2pi
     def _convert_quaternion_to_radian(self, q):
