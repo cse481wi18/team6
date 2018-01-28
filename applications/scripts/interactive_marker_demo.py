@@ -42,7 +42,7 @@ def main():
     server = InteractiveMarkerServer("simple_marker")
 
     make_marker(server, 3, 1, 0, "my_marker1")
-    make_marker(server, 4.4, -2.8, "my_marker2")
+    make_marker(server, 4.4, -2.8, 0, "my_marker2")
     make_marker(server, 1, 0, 0, "my_marker3")
     server.applyChanges()
     rospy.spin()
