@@ -1,0 +1,8 @@
+prefix=/home/team6/project/map_annotator/install
+
+Name: catkin_tools_prebuild
+Description: Description of catkin_tools_prebuild
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/team6/project/map_annotator/install/lib 
+Requires: 

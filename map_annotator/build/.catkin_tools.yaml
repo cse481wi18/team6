@@ -1,0 +1,6 @@
+devel_space: /home/team6/project/map_annotator/devel
+install: false
+install_space: /home/team6/project/map_annotator/install
+profile: default
+source_space: /home/team6/project/map_annotator/src
+workspace: /home/team6/project/map_annotator

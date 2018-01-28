@@ -1,0 +1,1 @@
+/home/team6/project/map_annotator/devel/.private/catkin_tools_prebuild/setup.bash
