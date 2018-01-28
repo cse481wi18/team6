@@ -13,10 +13,18 @@
       paper-button {
         background-color: var(--paper-grey-300)
       }
+
+      .poseButtons {
+        margin-top: 4px;
+        margin-left: 8px;
+      }
+
     </style>
-    [[poseName]]
-    <paper-button on-tap="_handleDelete">Delete</paper-button>
-    <paper-button on-tap="_handleGoto">Go To</paper-button>
+    <div class="poseName">[[poseName]]</div>
+    <div class="poseButtons">
+      <paper-button on-tap="_handleDelete">Delete</paper-button>
+      <paper-button on-tap="_handleGoto">Go To</paper-button>
+    </div>
 
     <ros-topic auto
       id="userActions"
