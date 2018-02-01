@@ -49,7 +49,7 @@ class MoveItGoalBuilder(object):
         self.allowed_planning_time = 10.0
         self.fixed_frame = 'base_link'
         self.gripper_frame = 'wrist_roll_link'
-        self.group_name = 'arm_with_torso'
+        self.group_name = 'arm'
         self.planning_scene_diff = moveit_msgs.msg.PlanningScene()
         self.planning_scene_diff.is_diff = True
         self.planning_scene_diff.robot_state.is_diff = True
