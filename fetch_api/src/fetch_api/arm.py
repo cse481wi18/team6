@@ -64,7 +64,8 @@ class Arm(object):
                      plan_only=False,
                      replan=False,
                      replan_attempts=5,
-                     tolerance=0.01):
+                     tolerance=0.01,
+                     orientation_constraint=None):
         """Moves the end-effector to a pose, using motion planning.
 
         Args:
@@ -86,6 +87,7 @@ class Arm(object):
             replan_attempts: int. How many times to replan if the execution
                 fails.
             tolerance: float. The goal tolerance, in meters.
+            orientation_constraint: moveit_msgs/OrientationConstraint. Constrains oreintation
 
         Returns:
             string describing the error if an error occurred, else None.
@@ -98,6 +100,11 @@ class Arm(object):
         goal_builder.replan = replan
         goal_builder.replan_attempts = replan_attempts
         goal_builder.tolerance = tolerance
+
+        if orientation_constraint is not None:
+            print('adding orientation constraint')
+            goal_builder.add_path_orientation_constraint(orientation_constraint)
+
         goal = goal_builder.build()
         self._moveit_client.send_goal(goal)
         self._moveit_client.wait_for_result(rospy.Duration(execution_timeout))
@@ -107,8 +114,8 @@ class Arm(object):
             return None
         else:
             return Arm.moveit_error_string(result.error_code.val)
-    
-    def check_pose(self, 
+
+    def check_pose(self,
                pose_stamped,
                allowed_planning_time=10.0,
                group_name='arm',
@@ -120,16 +127,16 @@ class Arm(object):
             tolerance=tolerance,
             plan_only=True)
 
-    @staticmethod   
+    @staticmethod
     def moveit_error_string(val):
         """Returns a string associated with a MoveItErrorCode.
-            
+
         Args:
             val: The val field from moveit_msgs/MoveItErrorCodes.msg
-            
+
         Returns: The string associated with the error value, 'UNKNOWN_ERROR_CODE'
             if the value is invalid.
-        """ 
+        """
         if val == MoveItErrorCodes.SUCCESS:
             return 'SUCCESS'
         elif val == MoveItErrorCodes.FAILURE:
@@ -165,7 +172,7 @@ class Arm(object):
         elif val == MoveItErrorCodes.INVALID_ROBOT_STATE:
             return 'INVALID_ROBOT_STATE'
         elif val == MoveItErrorCodes.INVALID_LINK_NAME:
-            return 'INVALID_LINK_NAME'                                      
+            return 'INVALID_LINK_NAME'
         elif val == MoveItErrorCodes.INVALID_OBJECT_NAME:
             return 'INVALID_OBJECT_NAME'
         elif val == MoveItErrorCodes.FRAME_TRANSFORM_FAILURE:
