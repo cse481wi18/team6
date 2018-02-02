@@ -211,6 +211,7 @@ class Arm(object):
         request.ik_request.timeout = timeout
         response = self._compute_ik(request)
         error_str = Arm.moveit_error_string(response.error_code.val)
+        print(error_str)
         success = error_str == 'SUCCESS'
         if not success:
             return False
