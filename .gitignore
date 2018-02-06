@@ -3,3 +3,4 @@
 *.pickle
 logs/
 bower_components/
+*.bag
