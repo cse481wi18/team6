@@ -5,11 +5,13 @@ import rospy
 from .moveit_goal_builder import MoveItGoalBuilder
 from moveit_msgs.msg import MoveItErrorCodes, MoveGroupAction
 from moveit_msgs.srv import GetPositionIK, GetPositionIKRequest
+from robot_controllers_msgs.msg import QueryControllerStatesAction, QueryControllerStatesGoal, ControllerState
 
 from .arm_joints import ArmJoints
 
 ACTION_NAME = 'arm_controller/follow_joint_trajectory'
 MOVEIT_ACTION_NAME = 'move_group'
+QUERY_CONTROLER_NAME = '/query_controller_states'
 
 TIME_FROM_START = 5
 
@@ -27,6 +29,7 @@ class Arm(object):
         self._joint_tr_client = actionlib.SimpleActionClient(ACTION_NAME, FollowJointTrajectoryAction)
         # Make MoveItGoal client
         self._moveit_client = actionlib.SimpleActionClient(MOVEIT_ACTION_NAME, MoveGroupAction)
+        self._controller_client = actionlib.SimpleActionClient(QUERY_CONTROLER_NAME, QueryControllerStatesAction)
         # TODO: Wait for server
         self._joint_tr_client.wait_for_server()
         self._moveit_client.wait_for_server()
@@ -219,3 +222,15 @@ class Arm(object):
             if name in ArmJoints.names():
                 rospy.loginfo('{}: {}'.format(name, position))
         return True
+
+    def relax(self, relax):
+        """
+        Relax the arm if `relax` is true, otherwise resume control of the arm
+        """
+        goal = QueryControllerStatesGoal()
+        state = ControllerState()
+        state.name = 'arm_controller/follow_joint_trajectory'
+        state.state = ControllerState.STOPPED if relax else ControllerState.RUNNING
+        goal.updates.append(state)
+        self._controller_client.send_goal(goal)
+        self._controller_client.wait_for_result()
