@@ -17,11 +17,12 @@ class ArTagReader(object):
     def callback(self, msg):
         self.markers = msg.markers
 
+# gets the current markers
 def get_markers():
     reader = ArTagReader()
     sub = rospy.Subscriber('/ar_pose_marker', AlvarMarkers, reader.callback) # Subscribe to AR tag poses, use reader.callback
     
-    rospy.loginfo('waiting for markers')
+    print('getting markers...')
 
     tries = 200
     while len(reader.markers) == 0:
@@ -34,7 +35,8 @@ def get_markers():
     for marker in reader.markers:
     	if len(marker.pose.header.frame_id) == 0:
     		marker.pose.header.frame_id = marker.header.frame_id
-    rospy.loginfo('have markers')
+    
+    print('got markers')
     return reader.markers
 
 def trans_rot_to_matrix(translation, orientation):

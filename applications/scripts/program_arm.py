@@ -22,7 +22,8 @@ class ArmRelBaseAction:
         self.pose = pose
 
     def __repr__(self):
-        return 'ArmRelBaseAction({})'.format(self.pose)
+        # return 'ArmRelBaseAction({})'.format(self.pose)
+        return 'ArmRelBaseAction()'
 
 class ArmRelTagAction:
     def __init__(self, tagid, transform):
@@ -33,12 +34,8 @@ class ArmRelTagAction:
         return 'ArmRelTagAction({})'.format(self.tagid)
 
 
-def execute_program(name, markers):
+def execute_program(name, markers, arm, gripper):
     actions = pickle.load(open('arm_programs/{}.pickle'.format(name), 'rb'))
-    arm = fetch_api.Arm()
-    gripper = fetch_api.Gripper()
-
-    arm.relax(False)
 
     for action in actions:
         print(action)
@@ -54,7 +51,11 @@ def execute_program(name, markers):
             base_marker_transform = pose_to_matrix(marker.pose)
             base_wrist_transform = base_marker_transform.dot(action.transform)
             pose = transform_to_pose(base_wrist_transform)
-            print(arm.move_to_pose(pose))
+            error = arm.move_to_pose(pose)
+            if error is None:
+                print("moved successfully")
+            else:
+                print(error)
 
 
 def find_marker(markers, mid):
@@ -63,30 +64,22 @@ def find_marker(markers, mid):
             return marker
     return None
 
-def help():
-    pass
 
-def build_program(markers):
-    arm = fetch_api.Arm()
-    gripper = fetch_api.Gripper()
+def record_actions(is_sim, arm, gripper):
     listener = tf.TransformListener()
-
-    #start = PoseStamped()
-    #start.header.frame_id = 'base_link'
-    #start.pose.position.x = 0.5
-    #start.pose.position.y = 0.5
-    #start.pose.position.z = 0.75
-    #arm.move_to_pose(start)
-                
-    program_name = raw_input('Program Name: ')
-    arm.relax(True) # TODO uncomment for real robot
-
     actions = []
+    if not is_sim:
+        arm.relax(True)
+        print("arm relaxed")
+
+    markers = get_markers()
+    print("start entering actions")
+
     while True:
-        command = raw_input('Command: ')
-        if command == 'save pose':
-            # save the pose to program
-            # saving offset in obj frame
+        action = raw_input('> action: ')
+        if action == 'pose':
+            # saves current arm pose
+            # prompts more
             frame = raw_input('Should the pose be relative to the base or a tag? ')
             if frame == 'base':
                 base_wrist_transform = trans_rot_to_matrix(*listener.lookupTransform('base_link', 'wrist_roll_link', rospy.Time(0)))
@@ -101,44 +94,93 @@ def build_program(markers):
                 base_marker_transform = pose_to_matrix(marker.pose)
 
                 actions.append(ArmRelTagAction(tag, np.linalg.inv(base_marker_transform).dot(base_wrist_transform))) # TODO: lol
-        elif command == 'save program':
-            # save program to file
-            pickle.dump(actions, open('arm_programs/{}.pickle'.format(program_name), 'wb'))
-        elif command == 'open gripper':
-            # save open gripper command and do 
+        
+            print("saved pose")
+
+        elif action == 'open':
             gripper.open()
             actions.append(GripperAction(True))
-        elif command == 'close gripper':
-            # save close gripper command and do
+            print("saved open action")
+
+        elif action == 'close':
             gripper.close()
             actions.append(GripperAction(False))
-        elif command == 'exit':
+            print("saved close action")
+
+        elif action == 'save':
+            name = raw_input('> Program name: ')
+            # save program
+            pickle.dump(actions, open('arm_programs/{}.pickle'.format(name), 'wb'))
+            print("saved recorded actions under \'{}\'".format(name))
+            actions = []
             break
-        elif command == 'help':
-            help()
-        elif command == 'relax':
-            arm.relax(True)
-        elif command == 'unrelax':
-            arm.relax(False)
+        elif action == 'cancel':
+            # reset actions list
+            actions = []
+            print("canceled recording")
+            break
         else:
-            print 'Unknown command'
-            help()
-        print(command)
+            print("Unknown action!")
+            print_actions()
+
+    if not is_sim:
+        arm.relax(False)
+        print("arm unrelaxed")
+
 
 def main():
+    print("waiting for time..")
     rospy.init_node('program_arm_node')
     wait_for_time()
+    is_sim = rospy.get_param('use_sim_time', False)
 
-    markers = get_markers()
-    if len(sys.argv) > 1:
-        execute_program(sys.argv[1], markers)
-    else: 
-        build_program(markers)
+    print_cmds()
 
-   
+    arm = fetch_api.Arm()
+    gripper = fetch_api.Gripper()
+
+    recording = False
+    while True:
+        cmd = raw_input('> ')
+        cmd = cmd.split()
+        if len(cmd) == 0:
+            continue
+
+        if cmd[0] == 'record':
+            # start saving action inputs
+            record_actions(is_sim, arm, gripper)
+
+        elif cmd[0] == 'run':
+            name = cmd[1]
+            markers = get_markers()
+            print("running {}...".format(name))
+            execute_program(name, markers, arm, gripper)
+
+        elif cmd[0] == 'exit':
+            print("Bye!")
+            break
+        elif cmd[0] == 'help':
+            print_cmds()
+        else:
+            print 'Unknown command!'
+            print_cmds()
 
 
+def print_cmds():
+    print("Commands:")
+    print("\t[record]: updates current tags and starts recording actions")
+    print_actions()
+    print("\t[run <program_name>]: updates current tags and runs the given program")
+    print("\t[exit]: exits")
+    print("\t[help]: show this list")
 
+def print_actions():
+    print("\t\tactions:")
+    print("\t\t[pose]: saves current arm's pose")
+    print("\t\t[open]: opens gripper")
+    print("\t\t[close]: closes gripper")
+    print("\t\t[save]: end recording and be prompted to save the program")
+    print("\t\t[cancel]: cancels recording")
 
 if __name__ == '__main__':
     main()
