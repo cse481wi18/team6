@@ -28,7 +28,9 @@ int main(int argc, char** argv) {
       nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
   ros::Publisher marker_pub =
       nh.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
-  perception::Segmenter segmenter(table_pub, marker_pub);
+  ros::Publisher above_surface_pub =
+      nh.advertise<sensor_msgs::PointCloud2>("above_surface_cloud", 1, true);
+  perception::Segmenter segmenter(table_pub, marker_pub, above_surface_pub);
   ros::Subscriber sub =
       nh.subscribe("downsampled_cloud", 1, &perception::Segmenter::Callback, &segmenter);
 
