@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   tf
+  simple_grasping
 )
 
 ## System dependencies are found with CMake's conventions
@@ -112,7 +113,7 @@ catkin_package(
     perception_downsample
     perception_segmentation
 #  CATKIN_DEPENDS roscpp rospy
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########
