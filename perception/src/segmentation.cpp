@@ -35,7 +35,9 @@ void SegmentSurface(PointCloudC::Ptr cloud, pcl::PointIndices::Ptr indices) {
 	Eigen::Vector3f axis;
 	axis << 0, 0, 1;
 	seg.setAxis(axis);
-	seg.setEpsAngle(pcl::deg2rad(10.0));
+	double table_slant_tolerance;
+	ros::param::param("table_slant_tolerance", table_slant_tolerance, 10.0);
+	seg.setEpsAngle(pcl::deg2rad(table_slant_tolerance));
 
 	// coeff contains the coefficients of the plane:
 	// ax + by + cz + d = 0
