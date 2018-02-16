@@ -1,5 +1,6 @@
 #include <vector>
 
+#include "perception/object.h"
 #include "pcl/PointIndices.h"
 #include "pcl/point_cloud.h"
 #include "pcl/point_types.h"
@@ -9,6 +10,7 @@
 #include "geometry_msgs/Vector3.h"
 #include "pcl/common/common.h"
 #include "pcl/ModelCoefficients.h"
+#include "perception/object_recognizer.h"
 
 namespace perception {
 // Finds the largest horizontal surface in the given point cloud.
@@ -36,17 +38,30 @@ void GetAxisAlignedBoundingBox(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
 void SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                            pcl::PointIndices::Ptr surface_indices,
                            std::vector<pcl::PointIndices>* object_indices);
+// Does a complete tabletop segmentation pipeline.
+//
+// Args:
+//  cloud: The point cloud with the surface and the objects above it.
+//  objects: The output objects.
+void SegmentTabletopScene(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+                          std::vector<Object>* objects, 
+                          pcl::PointCloud<pcl::PointXYZRGB>::Ptr above_surface_cloud);
 
 class Segmenter {
  public:
-  Segmenter(const ros::Publisher& surface_points_pub, 
-  			const ros::Publisher& marker_pub, 
-  			const ros::Publisher& above_surface_pub);
+  // Segmenter(const ros::Publisher& surface_points_pub, 
+  //       const ros::Publisher& marker_pub, 
+  //       const ros::Publisher& above_surface_pub);
+  Segmenter(const ros::Publisher& surface_points_pub,
+            const ros::Publisher& above_surface_pub,
+            const ros::Publisher& marker_pub,
+            const ObjectRecognizer& recognizer);
   void Callback(const sensor_msgs::PointCloud2& msg);
 
  private:
   ros::Publisher surface_points_pub_;
   ros::Publisher marker_pub_;
   ros::Publisher above_surface_pub_;
+  ObjectRecognizer recognizer_;
 };
 }  // namespace perception

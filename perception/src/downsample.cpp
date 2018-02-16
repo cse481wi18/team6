@@ -19,7 +19,7 @@ namespace perception {
     pcl::VoxelGrid<PointC> vox;
     vox.setInputCloud(cloud);
     double voxel_size;
-    ros::param::param("voxel_size", voxel_size, 0.01);
+    ros::param::param("voxel_size", voxel_size, 0.001);
     vox.setLeafSize(voxel_size, voxel_size, voxel_size);
     vox.filter(*downsampled_cloud);
 
