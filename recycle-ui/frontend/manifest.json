@@ -1,0 +1,6 @@
+{
+  "name": "recycle-ui",
+  "short_name": "recycle-ui",
+  "start_url": "/",
+  "display": "standalone"
+}
