@@ -1,8 +1,11 @@
 <launch>
+	<!-- The final launch file for the entire RecycloBot program -->
+	
 	<!-- Run Map Server -->
 	<!-- Run Classification ActionServer -->
 	<!-- Run Controller node -->
 	<!-- Run UI Server -->
 
+	<!-- TODO remove -->
 	<node pkg="recycle" type="test.py" name="recycle_test" output="screen" />
 </launch>
