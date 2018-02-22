@@ -1,7 +1,8 @@
 #goal definition
 ---
 #result definition
+int32 num_objects
 shape_msgs/SolidPrimitive[] bounding_boxes
-string[] classification
+string[] classifications
 ---
 #feedback

@@ -4,6 +4,7 @@ import os
 import pickle
 
 from geometry_msgs.msg import PoseWithCovarianceStamped, PoseStamped
+from recycle_msgs.msg import ActionPose
 import rospy
 
 class MapAnnotator(object):
@@ -19,7 +20,8 @@ class MapAnnotator(object):
         self._pose_sub = rospy.Subscriber('amcl_pose',
                                             PoseWithCovarianceStamped,
                                             callback=self._pose_cb)
-        self._goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+        # self._goal_pub = rospy.Publisher('/move_base_simple/goal', PoseStamped, queue_size=10)
+        self._goal_pub = rospy.Publisher('/recycle/move_request', ActionPose, queue_size=10)
         self._cur_pose = None
 
     def _pose_cb(self, msg):
@@ -38,9 +40,19 @@ class MapAnnotator(object):
         if name in self._poses:
             goal_pose = self._poses[name]
             # create msg and publish
-            goal_msg = PoseStamped()
-            goal_msg.pose = goal_pose
-            goal_msg.header.frame_id = 'map'
+            
+            # goal_msg = PoseStamped()
+            # goal_msg.pose = goal_pose
+            # goal_msg.header.frame_id = 'map'
+
+            goal_msg = ActionPose()
+            if name == 'home':
+                goal_msg.action = 'home'
+            else:
+                goal_msg.action = 'bus'
+            goal_msg.target_pose.header.frame_id = 'map'
+            goal_msg.target_pose.pose = goal_pose
+            
             self._goal_pub.publish(goal_msg)
             return True
 

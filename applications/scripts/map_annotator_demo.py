@@ -19,6 +19,7 @@ def print_cmds():
 			  save <name>: Save the robot's current pose as <name>. Overwrites if <name> already exists.\n \
 			  delete <name>: Delete the pose given by <name>.\n \
 			  goto <name>: Sends the robot to the pose given by <name>.\n \
+			  exit: exit\n \
 			  help: Show this list of commands"
 
 def main():

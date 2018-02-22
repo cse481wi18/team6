@@ -1,24 +1,39 @@
 #!/usr/bin/env python
+import math
 
 import actionlib
-import rospy
 import fetch_api
+import rospy
 
-from recycle_msgs.msg import ActionPose
-from recycle_msgs.msg import ClassifyAction, ClassifyActionGoal
 from geometry_msgs.msg import PoseStamped
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from recycle_msgs.msg import ActionPose
+from recycle_msgs.msg import ClassifyAction, ClassifyActionGoal
 
 MOVE_BASE_ACTION = 'move_base'
 
 class Controller(object):
 
-    def __init__(self, move_request_topic, classify_action):
+    # angle to look down at the table
+    LOOK_DOWN_ANGLE = math.pi / 2
+
+    # TODO fill in position of the bins in PoseStamped (frame in base_link?)
+    BIN_POSES = {
+        "compost": None,
+        "recycle": None,
+        "landfill": None
+    }
+
+    def __init__(self, move_request_topic, classify_action, category_map):
+        self._category_map = category_map
+        self._request_queue = []
+
+        # init robot body controllers
+        # TODO torso? always set torso to max height??
         self._head = fetch_api.Head()
         # TODO self._arm = fetch_api.Arm()
 
-        self._request_queue = []
-
+        # init subscribers and action clients
         # subscribe to the move requests from the UI
         self._move_request_sub = rospy.Subscriber(move_request_topic,
                                                  ActionPose,
@@ -28,6 +43,7 @@ class Controller(object):
         # action client to classify objects
         self._classify_client = actionlib.SimpleActionClient(classify_action, ClassifyAction)
 
+        # wait for action servers
         rospy.loginfo("Waiting for action servers...")
         self._move_base_client.wait_for_server()
         rospy.loginfo("Done waiting for move_base server.")
@@ -57,32 +73,49 @@ class Controller(object):
             goal.target_pose = request.target_pose
             self._move_base_client.send_goal(goal)
             self._move_base_client.wait_for_result()
-            rospy.loginfo("Arrived at target pose.")
+            rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
-            # TODO perform action once at target pose
+            # perform action once at target pose
             if request.action == "bus":
-                # TODO
-                # 1. look down
-                # 2. classify
-                # 3. bus objects
-                rospy.loginfo("BUS action")
-                pass
+                # TODO can't move head for some reason..
+                # "Unable to stop head_controller/point_head when trying to start head_controller/follow_joint_trajectory"
+                self._head.pan_tilt(0, self.LOOK_DOWN_ANGLE)  # look down
+                classifications = self._classify_objects()
+                self._bus_objects(classifications)
 
             elif request.action == "home":
-                rospy.loginfo("HOME action")
                 continue
 
             else:
                 rospy.logerr("Unknown action!")
-
+            
+            rospy.loginfo("Action completed.")
 
 
     def _classify_objects(self):
-        # TODO build ClassificationActionGoal
-        # self._classification_client.send(goal)
-        # self._classification_client.wait_for_result() # set a timeout?
+        self._classify_client.send_goal(ClassifyActionGoal())
+        self._classify_client.wait_for_result() # set a timeout?
+        classifications = self._classify_client.get_result()
 
-        # return self._classification_client.get_result()
-        pass
+        rospy.loginfo("Got classifications.")
+        return classifications
 
 
+    def _bus_objects(self, classifications):
+        rospy.loginfo("Start bussing objects... TODO")
+        # TODO
+        # planning scene??? need to have obstacles for tables, etc
+        # pick up each object and put it into the correct bin
+
+        for i in range(classifications.num_objects):
+            obj = classifications.bounding_boxes[i]
+            label = classifications.classifications[i]
+            category = self._category_map[label]
+
+            # TODO
+            # pick up object
+            # move gripper to correct bin and drop (self.BIN_POSES)
+
+            rospy.loginfo("Done with object {}".format(i))            
+
+        # TODO put arm back to 'home position'
