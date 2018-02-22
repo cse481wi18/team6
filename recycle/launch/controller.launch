@@ -11,7 +11,7 @@
 
 	<!-- TODO launch moveit for arm -->
 
-	<param name="ui_action_pose_topic" value="recycle/action_pose" />
-	<param name="classification_action" value="recycle/classification" />
+	<param name="move_request_topic" value="recycle/move_request" />
+	<param name="classify_action" value="recycle_classifier/classify" />
 	<node pkg="recycle" type="controller_main.py" name="recycle_controller" output="screen" />
 </launch>

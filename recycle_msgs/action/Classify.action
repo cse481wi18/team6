@@ -1,0 +1,7 @@
+#goal definition
+---
+#result definition
+shape_msgs/SolidPrimitive[] bounding_boxes
+string[] classification
+---
+#feedback

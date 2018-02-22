@@ -9,7 +9,9 @@ recycle/
 			* launches controller related nodes/packages
 			* map_server, amcl, move_base, controller
 
-
+		classifier.launch
+			* launches classifier related nodes/packages
+			
 	scripts/		(execution scripts)
 
 

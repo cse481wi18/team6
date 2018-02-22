@@ -8,8 +8,10 @@ project(recycle_msgs)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  actionlib_msgs
   geometry_msgs
   message_generation
+  shape_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -65,10 +67,16 @@ add_message_files(
 #   Action2.action
 # )
 
+add_action_files(
+  DIRECTORY action
+  FILES
+  Classify.action
+)
+
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  geometry_msgs  # Or other packages containing msgs
+  actionlib_msgs geometry_msgs shape_msgs std_msgs # Or other packages containing msgs
 )
 
 ################################################
@@ -103,7 +111,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES recycle_msgs
- CATKIN_DEPENDS message_runtime
+ CATKIN_DEPENDS actionlib_msgs message_runtime
 #  DEPENDS system_lib
 )
 

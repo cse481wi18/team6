@@ -13,10 +13,10 @@ def main():
 	rospy.init_node('recycle_controller')
 	wait_for_time()
 
-	ui_action_pose_topic = rospy.get_param('ui_action_pose_topic')
-	classification_action = rospy.get_param('classification_action')
+	move_request_topic = rospy.get_param('move_request_topic')
+	classify_action = rospy.get_param('classify_action')
 
-	controller = Controller(ui_action_pose_topic, classification_action)
+	controller = Controller(move_request_topic, classify_action)
 	controller.start()
 	# rospy.spin()
 
