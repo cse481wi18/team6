@@ -11,5 +11,5 @@
 
 	<!-- TODO launch moveit for arm -->
 
-	<node pkg="recycle" type="classifier_main.py" name="recycle_classifier" output="screen" />
+	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen" ><remap from="cloud_in" to="mock_point_cloud" /></node>
 </launch>

@@ -7,7 +7,7 @@ recycle/
 
 		controller.launch
 			* launches controller related nodes/packages
-			* map_server, amcl, move_base, controller
+			* map_server, amcl, move_base, move_group, controller
 
 		classifier.launch
 			* launches classifier related nodes/packages

@@ -30,6 +30,7 @@ def main():
 	
 	controller = Controller(move_request_topic, classify_action, category_map)
 	controller.start()
+	# controller._classify_objects()
 	# rospy.spin()
 
 
