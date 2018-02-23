@@ -29,12 +29,10 @@ class Controller(object):
         self._request_queue = []
 
         # init robot body controllers
-        # TODO torso? always set torso to max height??
         self._head = fetch_api.Head()
-        # TODO self._arm = fetch_api.Arm()
+        self._arm = fetch_api.Arm()
 
         # init subscribers and action clients
-        # subscribe to the move requests from the UI
         self._move_request_sub = rospy.Subscriber(move_request_topic,
                                                  ActionPose,
                                                  callback=self._move_request_cb)
@@ -64,7 +62,7 @@ class Controller(object):
                 continue
 
             request = self._request_queue.pop(0)
-            rospy.loginfo("Processing a request:")
+            rospy.loginfo("Processing request:")
             rospy.loginfo(request)
             rospy.loginfo("Num requests left in q: {}".format(len(self._request_queue)))
 
@@ -89,7 +87,7 @@ class Controller(object):
             else:
                 rospy.logerr("Unknown action!")
             
-            rospy.loginfo("Action completed.")
+            rospy.loginfo("Request completed.")
 
 
     def _classify_objects(self):
@@ -102,20 +100,35 @@ class Controller(object):
 
 
     def _bus_objects(self, classifications):
-        rospy.loginfo("Start bussing objects... TODO")
-        # TODO
-        # planning scene??? need to have obstacles for tables, etc
-        # pick up each object and put it into the correct bin
+        rospy.loginfo("Start bussing objects...")
+
+        # TODO planning scene??? need to have obstacles for tables, etc
 
         for i in range(classifications.num_objects):
-            obj = classifications.bounding_boxes[i]
-            label = classifications.classifications[i]
-            category = self._category_map[label]
+            obj_pose = classifications.poses[i]
+            obj_dim = classifications.dimensions[i]
+            obj_name = classifications.classifications[i]
+            category = self._category_map[obj_name]
+            bin_pose = self.BIN_POSES[category]
 
-            # TODO
-            # pick up object
-            # move gripper to correct bin and drop (self.BIN_POSES)
+            self._pickup_object(obj_pose, obj_dim, bin_pose)
 
-            rospy.loginfo("Done with object {}".format(i))            
+            rospy.loginfo("Done with object {}: \'{}\' to {}".format(i, obj_name, category))
 
         # TODO put arm back to 'home position'
+
+
+    # Given the target object's pose and dimension, and the target
+    # bin's pose, pick up object and drop in the bin.
+    def _pickup_object(self, obj_pose, obj_dim, bin_pose):
+        # TODO
+        # 1. Move gripper to top of obj_pose
+        #    a. gripper face down
+        #    b. object in the center of the gripper
+        # 2. Move down, grip object, move back up
+        # 3. Move to above bin_pose, drop object
+
+        rospy.loginfo("obj_pose: {}".format(obj_pose))
+        rospy.loginfo("obj_dim: {}".format(obj_dim))
+        rospy.loginfo("bin_pose: {}".format(bin_pose))
+        pass

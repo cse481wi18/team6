@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   geometry_msgs
   message_generation
-  shape_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -76,7 +75,7 @@ add_action_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  actionlib_msgs geometry_msgs shape_msgs std_msgs # Or other packages containing msgs
+  actionlib_msgs geometry_msgs std_msgs # Or other packages containing msgs
 )
 
 ################################################

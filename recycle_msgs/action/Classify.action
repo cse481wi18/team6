@@ -2,7 +2,8 @@
 ---
 #result definition
 int32 num_objects
-shape_msgs/SolidPrimitive[] bounding_boxes
+geometry_msgs/PoseStamped[] poses
+geometry_msgs/Vector3[] dimensions
 string[] classifications
 ---
 #feedback

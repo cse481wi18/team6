@@ -11,28 +11,29 @@ def wait_for_time():
         pass
 
 def main():
-	rospy.init_node('recycle_controller')
-	wait_for_time()
+    rospy.init_node('recycle_controller')
+    wait_for_time()
 
-	move_request_topic = rospy.get_param('move_request_topic')
-	classify_action = rospy.get_param('classify_action')
+    move_request_topic = rospy.get_param('move_request_topic')
+    classify_action = rospy.get_param('classify_action')
 
-	# TODO grab from the database??
-	category_map = {
-		"coffee_cup_sleeve": "compost",
-		"coffee_cup_no_sleeve": "recycle",
-		"crumpled_paper": "recycle",
-		"nature_valley_wrapper": "landfill"
-	}
+    # TODO grab from the database??
+    category_map = {
+        "coffee_cup_sleeve": "compost",
+        "coffee_cup_no_sleeve": "recycle",
+        "crumpled_paper": "recycle",
+        "nature_valley_wrapper": "landfill"
+    }
 
-	torso = Torso()
-	torso.set_height(0.4)
-	
-	controller = Controller(move_request_topic, classify_action, category_map)
-	controller.start()
-	# controller._classify_objects()
-	# rospy.spin()
+    # TODO always set torso to max height?? here?
+    torso = Torso()
+    torso.set_height(0.4)
+    
+    controller = Controller(move_request_topic, classify_action, category_map)
+    controller.start()
+    # controller._classify_objects()
+    # rospy.spin()
 
 
 if __name__ == '__main__':
-	main()
+    main()

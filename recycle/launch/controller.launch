@@ -9,7 +9,9 @@
 	<!-- TODO remove rviz -->
 	<node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" />
 
-	<!-- TODO launch moveit for arm -->
+	<!-- launch moveit for arm -->
+	<include file="$(find fetch_api)/launch/move_group.launch">
+	</include>
 
 	<param name="move_request_topic" value="recycle/move_request" />
 	<param name="classify_action" value="recycle_classifier/classify" />

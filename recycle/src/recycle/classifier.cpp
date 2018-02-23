@@ -1,3 +1,5 @@
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Vector3.h"
 #include "recycle/classifier.h"
 #include "recycle/crop.h"
 #include "recycle/downsample.h"
@@ -15,6 +17,7 @@ namespace recycle {
 
   void Classifier::ActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
     recycle_msgs::ClassifyResult result;
+
     ROS_INFO("WAITING FOR MESSAGE");
     
     sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
@@ -42,6 +45,15 @@ namespace recycle {
     result.classifications.push_back("coffee_cup_no_sleeve");    
     result.classifications.push_back("crumpled_paper");
     result.classifications.push_back("nature_valley_wrapper");
+    geometry_msgs::PoseStamped pose;
+    result.poses.push_back(pose);    
+    result.poses.push_back(pose);
+    result.poses.push_back(pose);
+    geometry_msgs::Vector3 dim;
+    result.dimensions.push_back(dim);
+    result.dimensions.push_back(dim);
+    result.dimensions.push_back(dim);
 
+    as_.setSucceeded(result);
   } 
 }
