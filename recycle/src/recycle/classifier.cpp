@@ -1,4 +1,6 @@
 #include "recycle/classifier.h"
+#include "recycle/crop.h"
+#include "recycle/downsample.h"
 
 namespace recycle {
   Classifier::Classifier(std::string name) :
@@ -26,13 +28,13 @@ namespace recycle {
 
     ROS_INFO("TRYING TO CROP");
     
-    recycle::Cropper cropper;
+    Cropper cropper;
     PointCloudC::Ptr cropped = cropper.Crop(cloud);
     
     ROS_INFO("CROPPED SUCCESSFULLY");
 
     ROS_INFO("TRYING TO DOWNSAMPLE");
-    recycle::Downsampler downsampler;
+    Downsampler downsampler;
     PointCloudC::Ptr downsampled = cropper.Crop(cropped);
     ROS_INFO("DOWNSAMPLED SUCCESSFULLY");
 
@@ -40,5 +42,6 @@ namespace recycle {
     result.classifications.push_back("coffee_cup_no_sleeve");    
     result.classifications.push_back("crumpled_paper");
     result.classifications.push_back("nature_valley_wrapper");
+
   } 
 }

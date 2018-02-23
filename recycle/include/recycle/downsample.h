@@ -2,12 +2,12 @@
 #include "sensor_msgs/PointCloud2.h"
 #include "pcl_conversions/pcl_conversions.h"
 #include "pcl/filters/crop_box.h"
-#include "pcl/filters/voxel_grid.h"
 
-namespace perception {
+namespace recycle {
   class Downsampler {
-   public:
-    Downsampler();
-    PointCloudC::Ptr Callback(PointCloudC::Ptr cloud);
+    typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
+    public:
+      Downsampler();
+      PointCloudC::Ptr Callback(PointCloudC::Ptr cloud);
   };
 }

@@ -12,17 +12,13 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 
-#include "recycle/crop.h"
-// #include "perception/downsample.h"
-// #include "perception/segmentation.h"
 #include "sensor_msgs/PointCloud2.h"
-#include "shape_msgs/SolidPrimitive.h"
 #include "recycle_msgs/ClassifyAction.h"
-#include "recycle/classifier.h"
 
 namespace recycle {
   typedef pcl::PointXYZRGB PointC;
   typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
+  
   class Classifier {
     public:
      explicit Classifier(std::string name);  

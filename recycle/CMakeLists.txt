@@ -124,6 +124,7 @@ catkin_package(
   LIBRARIES recycle
     recycle_classifier
     recycle_crop
+    recycle_downsample
   CATKIN_DEPENDS
     geometry_msgs
     recycle_msgs
@@ -155,6 +156,7 @@ include_directories(
 # )
 add_library(recycle_classifier src/recycle/classifier.cpp)
 add_library(recycle_crop src/recycle/crop.cpp)
+add_library(recycle_downsample src/recycle/downsample.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -162,6 +164,7 @@ add_library(recycle_crop src/recycle/crop.cpp)
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_classifier ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_crop ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(recycle_downsample ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -194,8 +197,13 @@ target_link_libraries(recycle_classifier
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
    recycle_crop
+   recycle_downsample
 )
 target_link_libraries(recycle_crop
+   ${catkin_LIBRARIES}
+   ${PCL_LIBRARIES}
+)
+target_link_libraries(recycle_downsample
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
 )

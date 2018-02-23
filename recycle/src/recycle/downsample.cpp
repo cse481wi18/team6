@@ -1,13 +1,12 @@
 // TODO: add includes, etc.
-#include "perception/downsample.h"
+#include "recycle/downsample.h"
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/common/common.h"
 
-namespace perception {
+namespace recycle {
   typedef pcl::PointXYZRGB PointC;
   typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
-  Downsampler::Downsampler(const ros::Publisher& pub) : pub_(pub) {}
-
+  
   Downsampler::Downsampler() {}
 
   PointCloudC::Ptr Downsampler::Callback(PointCloudC::Ptr cloud) {
