@@ -123,7 +123,7 @@ catkin_package(
     perception_segmentation
     perception_box_fitter
   CATKIN_DEPENDS
-  	geometry_msgs
+    geometry_msgs
     perception_msgs
     pcl_ros
     rosbag
@@ -218,9 +218,9 @@ target_link_libraries(perception_extract_features_main
 target_link_libraries(perception_crop ${catkin_LIBRARIES})
 target_link_libraries(perception_downsample ${catkin_LIBRARIES})
 target_link_libraries(perception_segmentation 
-	perception_box_fitter
+  perception_box_fitter
   perception_object_recognizer
-	${catkin_LIBRARIES} 
+  ${catkin_LIBRARIES} 
 )
 target_link_libraries(perception_feature_extraction 
   ${catkin_LIBRARIES}

@@ -8,6 +8,6 @@ namespace recycle {
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
     public:
       Downsampler();
-      PointCloudC::Ptr Callback(PointCloudC::Ptr cloud);
+      PointCloudC::Ptr Downsample(PointCloudC::Ptr cloud);
   };
 }

@@ -4,6 +4,7 @@
 #include "perception/segmentation.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "visualization_msgs/Marker.h"
+#include <ros/console.h>
 
 int main(int argc, char** argv) {
   if (argc < 2) {
@@ -34,6 +35,7 @@ int main(int argc, char** argv) {
       nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
   ros::Publisher marker_pub =
       nh.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
+  ROS_INFO("hello");
   ros::Publisher above_surface_pub =
       nh.advertise<sensor_msgs::PointCloud2>("above_surface_cloud", 1, true);
 

@@ -3,6 +3,8 @@
 #include "recycle/classifier.h"
 #include "recycle/crop.h"
 #include "recycle/downsample.h"
+#include "recycle/object_recognizer.h"
+#include "recycle/segmentation.h"
 
 namespace recycle {
   Classifier::Classifier(std::string name) :
@@ -38,22 +40,39 @@ namespace recycle {
 
     ROS_INFO("TRYING TO DOWNSAMPLE");
     Downsampler downsampler;
-    PointCloudC::Ptr downsampled = cropper.Crop(cropped);
+    PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
     ROS_INFO("DOWNSAMPLED SUCCESSFULLY");
 
-    result.num_objects = 3;
-    result.classifications.push_back("coffee_cup_no_sleeve");    
-    result.classifications.push_back("crumpled_paper");
-    result.classifications.push_back("nature_valley_wrapper");
-    geometry_msgs::PoseStamped pose;
-    result.poses.push_back(pose);    
-    result.poses.push_back(pose);
-    result.poses.push_back(pose);
-    geometry_msgs::Vector3 dim;
-    result.dimensions.push_back(dim);
-    result.dimensions.push_back(dim);
-    result.dimensions.push_back(dim);
+    ROS_INFO("OBJECT RECOGNIZER");
+    // This SHOULD be perception_msgs and not recycle_msgs
+    std::vector<perception_msgs::ObjectFeatures> dataset;
+    // TODO: LOAD DATA FROM DATABASE
+    recycle::LoadData("/home/team6/data/objects/combined_labels/", &dataset);
+    recycle::ObjectRecognizer recognizer(dataset);
+    ROS_INFO("LOADED DATASET");
+
+    ROS_INFO("SEGMENGTING");
+    recycle::Segmenter segmenter(recognizer);
+    segmenter.SegmentAndClassify(downsampled, &result);
+    ROS_INFO("SEGMENTED");
+
+    ROS_INFO("REPLYING TO CLIENT");
+    // result.num_objects = 3;
+    // result.classifications.push_back("coffee_cup_no_sleeve");    
+    // result.classifications.push_back("crumpled_paper");
+    // result.classifications.push_back("nature_valley_wrapper");
+    // geometry_msgs::PoseStamped pose;
+    // result.poses.push_back(pose);    
+    // result.poses.push_back(pose);
+    // result.poses.push_back(pose);
+    // geometry_msgs::Vector3 dim;
+    // result.dimensions.push_back(dim);
+    // result.dimensions.push_back(dim);
+    // result.dimensions.push_back(dim);
 
     as_.setSucceeded(result);
+    ROS_INFO("REPLIED");
+
+
   } 
 }

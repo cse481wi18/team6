@@ -1,11 +1,11 @@
-#ifndef _PERCEPTION_FEATURE_EXTRACTION_H_
-#define _PERCEPTION_FEATURE_EXTRACTION_H_
+#ifndef _RECYCLE_FEATURE_EXTRACTION_H_
+#define _RECYCLE_FEATURE_EXTRACTION_H_
 
 #include "ros/ros.h"
-#include "perception/object.h"
+#include "recycle/object.h"
 #include "perception_msgs/ObjectFeatures.h"
 
-namespace perception {
+namespace recycle {
 	void ExtractColorFeatures(const Object& object,
                           perception_msgs::ObjectFeatures* features);
 
@@ -14,6 +14,6 @@ namespace perception {
 
 	void ExtractFeatures(const Object& object,
 	                     perception_msgs::ObjectFeatures* features);
-}  // namespace perception
+}  // namespace recycle
 
-#endif  // _PERCEPTION_FEATURE_EXTRACTION_H_
+#endif  // _RECYCLE_FEATURE_EXTRACTION_H_

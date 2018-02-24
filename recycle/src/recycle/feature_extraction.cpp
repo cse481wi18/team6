@@ -1,11 +1,11 @@
-#include "perception/feature_extraction.h"
+#include "recycle/feature_extraction.h"
 
 #include <algorithm> // std::min and std::max
 
-#include "perception/object.h"
+#include "recycle/object.h"
 #include "perception_msgs/ObjectFeatures.h"
 
-namespace perception {
+namespace recycle {
 
   void ExtractColorFeatures(const Object& object,
                           perception_msgs::ObjectFeatures* features) {
@@ -36,27 +36,6 @@ namespace perception {
     ExtractColorFeatures(object, features);
   }
 
-// void ExtractSizeFeatures(const Object& object,
-//                          perception_msgs::ObjectFeatures* features) {
-//   // "x" dimension is always the smallest of x and y to account for rotations.
-//   // z always points up.
-//   float x = object.dimensions.x;
-//   float y = object.dimensions.y;
-
-//   if (x > y) {
-//     float temp = x;
-//     x = y;
-//     y = temp;
-//   }
-
-//   features->names.push_back("box_dim_x");
-//   features->values.push_back(x);
-//   features->names.push_back("box_dim_y");
-//   features->values.push_back(y);
-//   features->names.push_back("box_dim_z");
-//   features->values.push_back(object.dimensions.z);
-// }
-
 void ExtractSizeFeatures(const Object& object,
                          perception_msgs::ObjectFeatures* features) {
   double weight;
@@ -72,4 +51,4 @@ void ExtractSizeFeatures(const Object& object,
   features->names.push_back("box_dim_z");
   features->values.push_back(weight * object.dimensions.z);
 }
-}  // namespace perception
+}  // namespace recycle
