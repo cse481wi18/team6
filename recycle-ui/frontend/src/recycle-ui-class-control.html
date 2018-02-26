@@ -1,0 +1,88 @@
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
+<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
+<link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
+
+<dom-module id="recycle-ui-class-control">
+  <template>
+    <style is="custom-style" include="iron-flex"></style>
+    <style>
+      :host {
+        height: 100%;
+      }
+
+      #main {
+        padding: 0px 16px 0px 16px;
+      }
+    </style>
+
+    <!-- ROS setup
+    <ros-websocket auto ros="{{ros}}"
+      url="{{url}}"
+      on-connection="_handleConnection"
+      on-close="_handleClose"
+      on-error="_handleError">
+    </ros-websocket>
+
+    <ros-topic auto
+      ros="{{ros}}"
+      topic="map_annotator/pose_names"
+      msg-type="map_annotator/PoseNames"
+      last-message="{{poseNames}}"
+      on-message="_handlePoseNames">
+    </ros-topic>
+
+    <ros-topic auto
+      id="userActions"
+      topic="map_annotator/user_actions"
+      ros="{{ros}}"
+      msg-type="map_annotator/UserAction">
+    </ros-topic> -->
+
+    <div id="main" class="layout vertical">
+      <p>test</p>
+    </div>
+  </template>
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class ClassificationsControllerApp extends Polymer.Element {
+      static get is() { return 'recycle-ui-class-control'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'recycle-ui-app'
+          }
+        };
+      }
+
+      _handleConnection() {
+        this.status = 'Connected to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleClose() {
+        this.status = 'Closed connection to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleError() {
+        this.status = 'Error connecting to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handlePoseNames(evt) {
+        var msg = evt.detail;
+        console.log('Pose list: ', msg);
+      }
+    }
+
+    window.customElements.define(ClassificationsControllerApp.is, ClassificationsControllerApp);
+  </script>
+</dom-module>

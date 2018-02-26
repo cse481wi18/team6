@@ -1,16 +1,23 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
-<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
-<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
 <link rel="import" href="../bower_components/app-layout/app-drawer/app-drawer.html">
-<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
+<link rel="import" href="../bower_components/app-layout/app-drawer-layout/app-drawer-layout.html">
 <link rel="import" href="../bower_components/app-layout/app-header/app-header.html">
 <link rel="import" href="../bower_components/app-layout/app-header-layout/app-header-layout.html">
+<link rel="import" href="../bower_components/app-layout/app-scroll-effects/app-scroll-effects.html">
 <link rel="import" href="../bower_components/app-layout/app-toolbar/app-toolbar.html">
-<link rel="import" href="../bower_components/app-layout/demo/sample-content.html">
 
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/app-route/app-route.html">
+
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-pages/iron-pages.html">
+<link rel="import" href="../bower_components/iron-selector/iron-selector.html">
+
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
 
 <link rel="import" href="recycle-ui-map-control.html">
+<link rel="import" href="recycle-ui-class-control.html">
 
 <dom-module id="recycle-ui-app">
   <template>
@@ -25,7 +32,7 @@
         height: 100%;
       }
 
-      app-header-layout {
+      app-header-layout iron-pages {
         min-height: 100%;
         height: 100%;
       }
@@ -43,11 +50,52 @@
       app-drawer-layout:not([narrow]) [drawer-toggle] {
         display: none;
       }
+
+      app-drawer > app-toolbar {
+        font-weight: bold;
+      }
+
+      .nav-menu > a {
+        display: block;
+        padding: 12px 16px;
+        font-size: 20px;
+        font-weight: 500;
+        text-decoration: none;
+        color: black;
+      }
+
+      .nav-menu > a:focus {
+        outline: none;
+      }
+
+      .nav-menu > a.iron-selected {
+        background-color: var(--paper-grey-300);
+      }
     </style>
 
+    <!-- app-location binds to the app's url -->
+    <app-location route="{{route}}"></app-location>
+
+    <!-- this app-route manages the top-level routes -->
+    <app-route
+        route="{{route}}"
+        pattern="/:view"
+        data="{{routeData}}"
+        tail="{{subRoute}}"></app-route>
+
     <app-drawer-layout force-narrow>
-      <app-drawer slot="drawer">
+      <app-drawer id="drawer" slot="drawer">
         <app-toolbar>Choose page</app-toolbar>
+
+        <iron-selector
+            class="nav-menu"
+            selected="[[routeData.view]]"
+            attr-for-selected="name"
+            on-iron-activate="_drawerSelected">
+
+          <a name="map" href="/map">Map View</a>
+          <a name="classifications" href="/classifications">Classifications View</a>
+        </iron-selector>
       </app-drawer>
 
       <app-header-layout fullbleed>
@@ -58,7 +106,12 @@
           </app-toolbar>
         </app-header>
 
-        <recycle-ui-map-control></recycle-ui-map-control>
+
+        <!-- Load view based on route -->
+        <iron-pages selected="[[routeData.view]]" attr-for-selected="name" fallback-selection="map">
+          <recycle-ui-class-control name="classifications" route="{{subRoute}}"></recycle-ui-class-control>
+          <recycle-ui-map-control name="map" route="{{subRoute}}"></recycle-ui-map-control>
+        </iron-pages>
       </app-header-layout>
     </app-drawer-layout>
 
@@ -75,8 +128,21 @@
           prop1: {
             type: String,
             value: 'recycle-ui-app'
-          }
+          },
+          route: Object,
+          routeData: {
+            type: Object,
+            value: {
+              view: 'map'
+            }
+          },
+          subRoute: Object
         };
+      }
+
+      _drawerSelected() {
+        console.log("what", this.$.drawer);
+        if (!this.$.drawer.persistent) this.$.drawer.close();
       }
     }
 
