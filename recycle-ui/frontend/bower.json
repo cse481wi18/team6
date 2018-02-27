@@ -7,7 +7,8 @@
     "ros-topic": "jstnhuang/ros-topic#^1.0.0",
     "ros-rviz": "jstnhuang/ros-rviz#^3.0.4",
     "app-route": "PolymerElements/app-route#^2.0.3",
-    "iron-pages": "PolymerElements/iron-pages#^2.1.0"
+    "iron-pages": "PolymerElements/iron-pages#^2.1.0",
+    "paper-card": "PolymerElements/paper-card#^2.1.0"
   },
   "devDependencies": {
     "web-component-tester": "Polymer/web-component-tester#^6.0.0",

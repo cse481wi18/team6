@@ -1,0 +1,159 @@
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-card/paper-card.html">
+<link rel="import" href="../bower_components/paper-icon-button/paper-icon-button.html">
+
+<link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
+
+<dom-module id="recycle-ui-class-card">
+  <template>
+    <style>
+      paper-card {
+        margin-bottom: 10px;
+        width: 90%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .card-content {
+        width: 90%;
+        height: 20vh;
+      }
+    </style>
+    <!-- ROS setup
+    <ros-websocket auto ros="{{ros}}"
+      url="{{url}}"
+      on-connection="_handleConnection"
+      on-close="_handleClose"
+      on-error="_handleError">
+    </ros-websocket>
+
+    <ros-topic auto
+      ros="{{ros}}"
+      topic="map_annotator/pose_names"
+      msg-type="map_annotator/PoseNames"
+      last-message="{{poseNames}}"
+      on-message="_handlePoseNames">
+    </ros-topic>
+
+    <ros-topic auto
+      id="userActions"
+      topic="map_annotator/user_actions"
+      ros="{{ros}}"
+      msg-type="map_annotator/UserAction">
+    </ros-topic> -->
+
+    <paper-card>
+      <div class="card-content">
+        <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
+      </div>
+      <div class="card-actions">
+        <div class="horizontal justified">
+          <iron-icon icon="icons:delete-sweep"></iron-icon>
+          <paper-button>Trash</paper-button>
+          <paper-button>Recycle</paper-button>
+          <paper-button>Compost</paper-button>
+        </div>
+      </div>
+    </paper-card>
+  </template>
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class ClassificationCard extends Polymer.Element {
+      static get is() { return 'recycle-ui-class-card'; }
+      static get properties() {
+        return {
+            id: Number,
+            imagePath: String
+        };
+      }
+
+      _handleConnection() {
+        this.status = 'Connected to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleClose() {
+        this.status = 'Closed connection to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleError() {
+        this.status = 'Error connecting to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handlePoseNames(evt) {
+        var msg = evt.detail;
+        console.log('Pose list: ', msg);
+      }
+
+      ready() {
+        super.ready();
+        var config = {
+          "globalOptions": {
+            "background": "#111111",
+            "colladaLoader": "collada2",
+            "colladaServer": "http://localhost:8001/",
+            "fixedFrame": "/map",
+            "url": "ws://localhost:9090",
+            "videoServer": "http://localhost:9999"
+          },
+          "sidebarOpened": false,
+          "hideSidebar": true,
+          "displays": [
+            {
+              "isShown": true,
+              "name": "Grid",
+              "options": {
+                "cellSize": "1",
+                "color": "#cccccc",
+                "numCells": "10"
+              },
+              "type": "grid"
+            },
+            {
+              "isShown": true,
+              "name": "Map",
+              "options": {
+                "color": {
+                  "r": 255,
+                  "g": 255,
+                  "b": 255
+                },
+                "continuous": true,
+                "opacity": "1",
+                "topic": "/map"
+              },
+              "type": "occupancyGrid"
+            },
+            {
+              "isShown": true,
+              "name": "Robot model",
+              "options": {
+                "param": "robot_description"
+              },
+              "type": "urdf"
+            },
+            {
+              "isShown": true,
+              "name": "Interactive Markers",
+              "options": {
+                "topic": "/map_annotator/map_poses"
+              },
+              "type": "interactiveMarkers"
+            }
+          ]
+        };
+        this.$.rviz.config = config;
+      }
+    }
+
+    window.customElements.define(ClassificationCard.is, ClassificationCard);
+  </script>
+</dom-module>

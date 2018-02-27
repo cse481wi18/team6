@@ -6,34 +6,16 @@
 <link rel="import" href="../bower_components/ros-topic/ros-topic.html">
 <link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
 
-<link rel="import" href="recycle-ui-class-column.html">
+<link rel="import" href="recycle-ui-class-card.html">
 
-<dom-module id="recycle-ui-class-control">
+<dom-module id="recycle-ui-class-column">
   <template>
     <style>
       :host {
-        height: 100%;
-      }
-
-      #classes-main {
-        padding: 0px 8px 0px 8px;
-      }
-
-      #classes-main, #classes-content, .category-col {
-        height: 100%;
-      }
-
-      #trash-col, #recycle-col {
-        border-right: 2px var(--paper-grey-400) solid;
-      }
-
-      .category-col {
-        display: inline-block;
-        width: 32%;
-        padding: 10px 8px 0px 8px;
+        position: relative;
+        text-align: center;
       }
     </style>
-
     <!-- ROS setup
     <ros-websocket auto ros="{{ros}}"
       url="{{url}}"
@@ -57,18 +39,13 @@
       msg-type="map_annotator/UserAction">
     </ros-topic> -->
 
-    <div id="classes-main" class="layout vertical">
-      <div id="classes-content" class="layout horizontal">
-        <div class="category-col" id="trash-col">
-            <recycle-ui-class-column type="trash"></recycle-ui-class-column>
-        </div>
-        <div class="category-col" id="recycle-col">
-            <recycle-ui-class-column type="recycle"></recycle-ui-class-column>
-        </div>
-        <div class="category-col" id="compost-col">
-            <recycle-ui-class-column type="compost"></recycle-ui-class-column>
-        </div>
-      </div>
+    <div>
+        <!--<recycle-ui-class-card imagePath="donuts.png"></recycle-ui-class-card>-->
+        <recycle-ui-class-card></recycle-ui-class-card>
+
+        <recycle-ui-class-card></recycle-ui-class-card>
+
+        <recycle-ui-class-card></recycle-ui-class-card>
     </div>
   </template>
   <script>
@@ -76,14 +53,11 @@
      * @customElement
      * @polymer
      */
-    class ClassificationsControllerApp extends Polymer.Element {
-      static get is() { return 'recycle-ui-class-control'; }
+    class ClassificationColumn extends Polymer.Element {
+      static get is() { return 'recycle-ui-class-column'; }
       static get properties() {
         return {
-          prop1: {
-            type: String,
-            value: 'recycle-ui-app'
-          }
+          type: String
         };
       }
 
@@ -108,6 +82,6 @@
       }
     }
 
-    window.customElements.define(ClassificationsControllerApp.is, ClassificationsControllerApp);
+    window.customElements.define(ClassificationColumn.is, ClassificationColumn);
   </script>
 </dom-module>
