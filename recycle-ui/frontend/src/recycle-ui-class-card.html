@@ -19,7 +19,7 @@
 
       .card-content {
         width: 90%;
-        height: 20vh;
+        height: 17vh;
       }
     </style>
     <!-- ROS setup
@@ -50,6 +50,7 @@
         <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
       </div>
       <div class="card-actions">
+        <p>[[topic]]</p>
         <div class="horizontal justified">
           <iron-icon icon="icons:delete-sweep"></iron-icon>
           <paper-button>Trash</paper-button>
@@ -69,7 +70,7 @@
       static get properties() {
         return {
             id: Number,
-            imagePath: String
+            topic: String
         };
       }
 

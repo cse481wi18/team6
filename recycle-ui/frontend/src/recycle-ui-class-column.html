@@ -15,8 +15,16 @@
         position: relative;
         text-align: center;
       }
+
+      .arrow-wrapper {
+        margin-top: 5px;
+      }
+
+      h3 {
+        margin: 10px 0 10px 0;
+      }
     </style>
-    <!-- ROS setup
+    <!-- ROS setup -->
     <ros-websocket auto ros="{{ros}}"
       url="{{url}}"
       on-connection="_handleConnection"
@@ -25,14 +33,21 @@
     </ros-websocket>
 
     <ros-topic auto
+      id="logTopic"
       ros="{{ros}}"
-      topic="map_annotator/pose_names"
-      msg-type="map_annotator/PoseNames"
-      last-message="{{poseNames}}"
-      on-message="_handlePoseNames">
+      topic="recycle_ui/get_log_page"
+      msg-type="recycle_ui/GetLogPage"
     </ros-topic>
 
     <ros-topic auto
+      ros="{{ros}}"
+      topic="recycle_ui/active_logs"
+      msg-type="recycle_ui/ActiveLogs"
+      last-message="{{items}}"
+      on-message="_updateItems">
+    </ros-topic>
+
+    <!--<ros-topic auto
       id="userActions"
       topic="map_annotator/user_actions"
       ros="{{ros}}"
@@ -40,15 +55,22 @@
     </ros-topic> -->
 
     <div>
-        <!--<recycle-ui-class-card imagePath="donuts.png"></recycle-ui-class-card>-->
-        <recycle-ui-class-card></recycle-ui-class-card>
+        <h3>[[title]]</h3>
 
-        <recycle-ui-class-card></recycle-ui-class-card>
+        <!-- TODO: loop over items -->
 
-        <recycle-ui-class-card></recycle-ui-class-card>
+        <template is="dom-repeat" items="[[items.pointcloud_topics]]">
+          <recycle-ui-class-card topic="{{item"}}></recycle-ui-class-card>
+        </template>
+
+        <div class="arrow wrapper">
+            <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
+            <paper-icon-button icon="icons:arrow-forward" on-tap="_nextItems"></paper-icon-button>
+        </div>
     </div>
   </template>
   <script>
+    NUM_DISPLAY = 3;
     /**
      * @customElement
      * @polymer
@@ -57,13 +79,15 @@
       static get is() { return 'recycle-ui-class-column'; }
       static get properties() {
         return {
-          type: String
+          type: String,
+          title: String
         };
       }
 
       _handleConnection() {
         this.status = 'Connected to the websocket server.';
-        console.log(this.status);
+        this.lastId = 0;
+        this._nextItems();
       }
 
       _handleClose() {
@@ -79,6 +103,45 @@
       _handlePoseNames(evt) {
         var msg = evt.detail;
         console.log('Pose list: ', msg);
+      }
+
+      _nextItems() {
+        console.log('Fetching next');
+        this._getItems(NUM_DISPLAY);
+      }
+
+      _prevItems() {
+        console.log('Fetching prev');
+        this._getItems(-1 * NUM_DISPLAY);
+      }
+
+      _getItems(num) {
+        console.log('Getting', num, 'items starting at', this.lastId);
+        var msg = {
+          waste_type: this.type,
+          starting_log_num: this.lastId,
+          page_size: num
+        };
+
+        this.$.logTopic.publish(msg);
+      }
+
+      _merge(items) {
+        console.log('Items at start of merge', items);
+        var result = [];
+        for (var i = 0; i < items.length; i++) {
+           var item = {
+               'label': items.predicted_labels[i],
+               'topic': items.pointcloud_topics[i]
+           };
+           result.push(item);
+        }
+        console.log('Items at end of merge', result);
+        return result;
+      }
+
+      ready() {
+        this.lastId = 0;
       }
     }
 
