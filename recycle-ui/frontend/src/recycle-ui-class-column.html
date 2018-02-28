@@ -43,7 +43,8 @@
       ros="{{ros}}"
       topic="recycle_ui/active_logs"
       msg-type="recycle_ui/ActiveLogs"
-      last-message="{{items}}">
+      last-message="{{items}}"
+      on-message="_handleResponse">
     </ros-topic>
 
     <!--<ros-topic auto
@@ -117,14 +118,20 @@
       }
 
       _getItems(num) {
-        console.log('Getting', num, 'items starting at', this.lastId);
+        console.log('Getting', num, 'items starting at', this.lastId, 'for', this.type);
         var msg = {
-          waste_type: this.type,
+          waste_type: 'recycle', // this.type,
           starting_log_num: this.lastId,
           page_size: num
         };
 
         this.$.logTopic.publish(msg);
+      }
+
+      _handleResponse(evt) {
+        var msg = evt.detail;
+
+        console.log('Message', msg, this.items);
       }
 
       _merge(items) {
