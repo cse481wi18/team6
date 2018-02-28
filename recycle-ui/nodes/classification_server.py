@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import rospy
-from recycle_ui.msg import GetLogPage, ActiveLogs
+from recycle_ui.msg import ActiveLogs, GetLogPage, LogItem
 from sensor_msgs.msg import PointCloud2
 from perception import MockCamera
 import sqlite3
@@ -47,28 +47,31 @@ class ClassificationServer():
             (get_log_page.waste_type, get_log_page.starting_log_num, get_log_page.page_size))
         logs = c.fetchall()
 
-        predicted_labels = []
-        actual_labels = []
-        pointcloud_topics = []
+        # Hunter is doing this for testing because He fucked up db
+        test_data = {
+            'recycle': [(1, 'paper', 'unknown', 'not/sure'), (4, 'coffee', 'unknown', 'not/sure')],
+            'trash': [(2, 'wrapper', 'unknown', 'not/sure')],
+            'compost': [(3, 'apple', 'unknown', 'not/sure')]
+        };
+        logs = test_data[get_log_page.waste_type]
+        log_items = []
         for log in logs:
             # build response fields
             rospy.logerr(log)
             rospy.logerr("PROCESSING LOG")
-            predicted_labels.append(str(log[1]))
-            actual_labels.append(str(log[2]))
             cloud_topic_name = 'log{}_pointcloud'.format(log[0])
-            pointcloud_topics.append(cloud_topic_name)
+            log_items.append(LogItem(predicted_item_label=str(log[1]),
+                predicted_waste_type=get_log_page.waste_type,
+                actual_label=str(log[2]),
+                pointcloud_topic=cloud_topic_name))
 
             # prepare to publish pointclouds
-            cloud = self._camera.read_cloud(log[3])
-            pub = rospy.Publisher(cloud_topic_name, PointCloud2, latch=True, queue_size=1)
-            pub.publish(cloud)
-            self._active_cloud_pubs.append(pub)
+            #cloud = self._camera.read_cloud(log[3])
+            #pub = rospy.Publisher(cloud_topic_name, PointCloud2, latch=True, queue_size=1)
+            #pub.publish(cloud)
+            #self._active_cloud_pubs.append(pub)
 
-        active_logs = ActiveLogs()
-        active_logs.predicted_labels = predicted_labels
-        active_logs.actual_labels = actual_labels
-        active_logs.pointcloud_topics = pointcloud_topics
+        active_logs = ActiveLogs(log_items=log_items)
         self._active_log_pub.publish(active_logs);
         conn.close()
 

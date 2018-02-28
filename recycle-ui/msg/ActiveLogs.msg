@@ -1,3 +1,1 @@
-string[] predicted_labels
-string[] actual_labels
-string[] pointcloud_topics
+LogItem[] log_items

@@ -52,6 +52,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   GetLogPage.msg
+  LogItem.msg
   ActiveLogs.msg
 )
 
