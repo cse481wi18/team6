@@ -19,7 +19,7 @@
 
       .card-content {
         width: 90%;
-        height: 17vh;
+        height: 16.5vh;
       }
     </style>
     <!-- ROS setup
@@ -95,6 +95,7 @@
       }
 
       ready() {
+        console.log('Card with topic', this.topic);
         super.ready();
         var config = {
           "globalOptions": {

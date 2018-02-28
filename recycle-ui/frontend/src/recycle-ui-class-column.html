@@ -32,19 +32,18 @@
       on-error="_handleError">
     </ros-websocket>
 
-    <ros-topic auto
+    <ros-topic
       id="logTopic"
       ros="{{ros}}"
       topic="recycle_ui/get_log_page"
-      msg-type="recycle_ui/GetLogPage"
+      msg-type="recycle_ui/GetLogPage">
     </ros-topic>
 
     <ros-topic auto
       ros="{{ros}}"
       topic="recycle_ui/active_logs"
       msg-type="recycle_ui/ActiveLogs"
-      last-message="{{items}}"
-      on-message="_updateItems">
+      last-message="{{items}}">
     </ros-topic>
 
     <!--<ros-topic auto
@@ -60,8 +59,10 @@
         <!-- TODO: loop over items -->
 
         <template is="dom-repeat" items="[[items.pointcloud_topics]]">
-          <recycle-ui-class-card topic="{{item"}}></recycle-ui-class-card>
+          <recycle-ui-class-card topic="{{item}}"></recycle-ui-class-card>
         </template>
+
+
 
         <div class="arrow wrapper">
             <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
@@ -141,6 +142,7 @@
       }
 
       ready() {
+        super.ready();
         this.lastId = 0;
       }
     }
