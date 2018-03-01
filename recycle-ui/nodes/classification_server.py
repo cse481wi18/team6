@@ -51,14 +51,6 @@ class ClassificationServer():
             (self._waste_type, get_log_page.starting_log_num, get_log_page.page_size))
         logs = c.fetchall()
 
-        # Hunter is doing this for testing because He fucked up db
-        test_data = {
-            'recycle': [(1, 'paper', 'unknown', 'recycle', 'not/sure'), (4, 'coffee', 'unknown', 'recycle', 'not/sure')],
-            'trash': [(2, 'wrapper', 'unknown', 'trash', 'not/sure')],
-            'compost': [(3, 'apple', 'unknown', 'compost', 'not/sure')]
-        };
-
-        logs = test_data[self._waste_type]
         log_items = []
         for log in logs:
             # build response fields

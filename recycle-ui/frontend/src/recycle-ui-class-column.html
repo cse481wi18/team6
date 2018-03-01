@@ -63,9 +63,10 @@
           <recycle-ui-class-card topic="{{item.pointcloud_topic}}"></recycle-ui-class-card>
         </template>
 
+
         <div class="arrow wrapper">
-            <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
-            <paper-icon-button icon="icons:arrow-forward" on-tap="_nextItems"></paper-icon-button>
+          <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
+          <paper-icon-button icon="icons:arrow-forward" on-tap="_nextItems"></paper-icon-button>
         </div>
     </div>
   </template>
@@ -82,8 +83,10 @@
           type: String,
           title: String,
           items: {
-              type: Array,
-              value: []
+            type: Object,
+            value: {
+              log_items: []
+            }
           }
         };
       }
@@ -133,7 +136,7 @@
 
         // update to last id
         var logItems = this.items.log_items;
-        var maxId = -1;
+        var maxId = 0;
         for (var i = 0; i < logItems.length; i++) {
           if (logItems[i].log_id > maxId) {
             maxId = logItems[i].log_id;
