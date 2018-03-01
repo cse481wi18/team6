@@ -35,14 +35,15 @@
     <ros-topic
       id="logTopic"
       ros="{{ros}}"
-      topic="recycle_ui/get_log_page"
+      topic="recycle_ui/get_{{type}}_log_page"
       msg-type="recycle_ui/GetLogPage">
     </ros-topic>
 
     <ros-topic auto
       ros="{{ros}}"
-      topic="recycle_ui/active_logs"
+      topic="recycle_ui/active_{{type}}_logs"
       msg-type="recycle_ui/ActiveLogs"
+      last-message="{{items}}"
       on-message="_handleResponse">
     </ros-topic>
 
@@ -58,7 +59,7 @@
 
         <!-- TODO: loop over items -->
 
-        <template is="dom-repeat" items="[[items]]">
+        <template is="dom-repeat" items="[[items.log_items]]">
           <recycle-ui-class-card topic="{{item.pointcloud_topic}}"></recycle-ui-class-card>
         </template>
 
@@ -89,7 +90,6 @@
 
       _handleConnection() {
         this.status = 'Connected to the websocket server.';
-        this.lastId = 0;
         this._nextItems();
       }
 
@@ -121,7 +121,6 @@
       _getItems(num) {
         console.log('Getting', num, 'items starting at', this.lastId, 'for', this.type);
         var msg = {
-          waste_type: this.type,
           starting_log_num: this.lastId,
           page_size: num
         };
@@ -132,33 +131,16 @@
       _handleResponse(evt) {
         var msg = evt.detail;
 
-        console.log('Message', msg, this.items);
-
-        var result = [];
-        for (var i = 0; i < msg.log_items.length; i++) {
-          if (msg.log_items[i].predicted_waste_type === this.type) {
-            result.push(msg.log_items[i]);
+        // update to last id
+        var logItems = this.items.log_items;
+        var maxId = -1;
+        for (var i = 0; i < logItems.length; i++) {
+          if (logItems[i].log_id > maxId) {
+            maxId = logItems[i].log_id;
           }
         }
-
-        if (result.length > 0) {
-          console.log('updating fields', this.type, result);
-          this.items = result;
-        }
-      }
-
-      _merge(items) {
-        console.log('Items at start of merge', items);
-        var result = [];
-        for (var i = 0; i < items.length; i++) {
-           var item = {
-               'label': items.predicted_labels[i],
-               'topic': items.pointcloud_topics[i]
-           };
-           result.push(item);
-        }
-        console.log('Items at end of merge', result);
-        return result;
+        this.lastId = maxId;
+        console.log(this.type, 'Message', msg, this.items, 'id', this.lastId);
       }
 
       ready() {
