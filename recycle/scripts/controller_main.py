@@ -22,7 +22,10 @@ def main():
         "coffee_cup_sleeve": "compost",
         "coffee_cup_no_sleeve": "recycle",
         "crumpled_paper": "recycle",
-        "nature_valley_wrapper": "landfill"
+        "nature_valley_wrapper": "landfill",
+
+        # Testing
+        'yellow_dog_toy': 'compost',
     }
 
     # TODO always set torso to max height?? here?

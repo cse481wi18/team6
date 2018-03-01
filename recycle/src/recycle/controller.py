@@ -10,6 +10,8 @@ from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from recycle_msgs.msg import ActionPose
 from recycle_msgs.msg import ClassifyAction, ClassifyActionGoal
 
+from visualization_msgs.msg import Marker
+
 MOVE_BASE_ACTION = 'move_base'
 
 class Controller(object):
@@ -49,6 +51,12 @@ class Controller(object):
         rospy.loginfo("Done waiting for classify server.")
 
 
+        ########### FOR DEBUGGING ##################
+        self._marker_pub = rospy.Publisher('recycle/object_markers', Marker, queue_size=10)
+
+        rospy.loginfo("Done init")
+
+
     def _move_request_cb(self, msg):
         # add goal pose to queue
         self._request_queue.append(msg)
@@ -78,8 +86,13 @@ class Controller(object):
                 # TODO can't move head for some reason..
                 # "Unable to stop head_controller/point_head when trying to start head_controller/follow_joint_trajectory"
                 self._head.pan_tilt(0, self.LOOK_DOWN_ANGLE)  # look down
-                classifications = self._classify_objects()
-                self._bus_objects(classifications)
+                pointcloud_result = self._classify_pointcloud()
+
+                # add obstacles to PlanningScene for the arm
+                self._add_obstacles(pointcloud_result)
+
+                # now, bus the classified objects
+                self._bus_objects(pointcloud_result)
 
             elif request.action == "home":
                 continue
@@ -90,28 +103,36 @@ class Controller(object):
             rospy.loginfo("Request completed.")
 
 
-    def _classify_objects(self):
+    def _classify_pointcloud(self):
         self._classify_client.send_goal(ClassifyActionGoal())
         self._classify_client.wait_for_result() # set a timeout?
-        classifications = self._classify_client.get_result()
+        pointcloud_result = self._classify_client.get_result()
 
-        rospy.loginfo("Got classifications.")
-        return classifications
+        rospy.loginfo("Got results from classifier.")
+        return pointcloud_result
+
+
+    def _add_obstacles(self, pointcloud_result):
+        # TODO add obstacles to planning scene
+        pass
 
 
     def _bus_objects(self, classifications):
         rospy.loginfo("Start bussing objects...")
 
-        # TODO planning scene??? need to have obstacles for tables, etc
-
         for i in range(classifications.num_objects):
-            obj_pose = classifications.poses[i]
+            obj_posestamped = classifications.poses[i]
             obj_dim = classifications.dimensions[i]
             obj_name = classifications.classifications[i]
             category = self._category_map[obj_name]
             bin_pose = self.BIN_POSES[category]
 
-            self._pickup_object(obj_pose, obj_dim, bin_pose)
+            # DEBUG
+            self._pub_object_marker(i, obj_name, obj_posestamped.pose, obj_dim)
+
+
+            # if confidence < thresh, default to landfill
+            self._pickup_object(obj_posestamped, obj_dim, bin_pose)
 
             rospy.loginfo("Done with object {}: \'{}\' to {}".format(i, obj_name, category))
 
@@ -120,7 +141,7 @@ class Controller(object):
 
     # Given the target object's pose and dimension, and the target
     # bin's pose, pick up object and drop in the bin.
-    def _pickup_object(self, obj_pose, obj_dim, bin_pose):
+    def _pickup_object(self, obj_posestamped, obj_dim, bin_pose):
         # TODO
         # 1. Move gripper to top of obj_pose
         #    a. gripper face down
@@ -128,7 +149,23 @@ class Controller(object):
         # 2. Move down, grip object, move back up
         # 3. Move to above bin_pose, drop object
 
-        rospy.loginfo("obj_pose: {}".format(obj_pose))
+        rospy.loginfo("obj_posestamped: {}".format(obj_posestamped))
         rospy.loginfo("obj_dim: {}".format(obj_dim))
         rospy.loginfo("bin_pose: {}".format(bin_pose))
         pass
+
+
+    ##### FOR DEBUGGING #####
+    def _pub_object_marker(self, i, obj_name, obj_pose, obj_dim):
+        marker = Marker()
+
+        marker.ns = obj_name
+        marker.id = i
+        marker.header.frame_id = 'base_link'
+        marker.type = Marker.CUBE
+        marker.pose = obj_pose
+        marker.scale = obj_dim
+        marker.color.g = 1
+        marker.color.a = 0.3
+
+        self._marker_pub.publish(marker)
