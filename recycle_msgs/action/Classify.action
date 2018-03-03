@@ -1,10 +1,20 @@
 #goal definition
 ---
 #result definition
+
+#### Classified Object (to pickup) ####
 int32 num_objects
-geometry_msgs/PoseStamped[] poses
-geometry_msgs/Vector3[] dimensions
+geometry_msgs/PoseStamped[] object_poses
+geometry_msgs/Vector3[] object_dimensions
 string[] classifications
 float64[] confidence
+#######################################
+
+############### Obstacles #############
+int32 num_obstacles
+geometry_msgs/PoseStamped[] obstacle_poses
+geometry_msgs/Vector3[] obstacle_dimensions
+#######################################
+
 ---
 #feedback

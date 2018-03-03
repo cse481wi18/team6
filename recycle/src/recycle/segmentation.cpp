@@ -26,7 +26,7 @@
 
 namespace recycle {
 
-void SegmentSurface(PointCloudC::Ptr cloud,
+void Segmenter::SegmentSurface(PointCloudC::Ptr cloud,
           pcl::PointIndices::Ptr indices,
           pcl::ModelCoefficients::Ptr coeff) {
   pcl::PointIndices indices_internal;
@@ -71,7 +71,7 @@ void SegmentSurface(PointCloudC::Ptr cloud,
   }
 }
 
-void SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+void Segmenter::SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                            pcl::PointIndices::Ptr surface_indices,
                            std::vector<pcl::PointIndices>* object_indices) {
   pcl::ExtractIndices<PointC> extract;
@@ -116,13 +116,14 @@ void SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
            object_indices->size(), min_size, max_size);
 }
 
-void SegmentTabletopScene(PointCloudC::Ptr cloud,
+void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
                           std::vector<Object>* objects,
+                          std::vector<Object>* obstacles,
                           PointCloudC::Ptr above_surface_cloud) {
   // Same as callback, but with visualization code removed.
   pcl::PointIndices::Ptr table_inliers(new pcl::PointIndices());
   pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients());
-  SegmentSurface(cloud, table_inliers, coeff);
+  Segmenter::SegmentSurface(cloud, table_inliers, coeff);
 
   PointCloudC::Ptr table_cloud(new PointCloudC());
 
@@ -131,13 +132,34 @@ void SegmentTabletopScene(PointCloudC::Ptr cloud,
   extract.setInputCloud(cloud);
   extract.setIndices(table_inliers);
   extract.filter(*table_cloud);
- 
+
+  sensor_msgs::PointCloud2 msg_out;
+  pcl::toROSMsg(*table_cloud, msg_out);
+  table_cloud_pub_.publish(msg_out); 
+
   //Use simple_grasping instead of our own function
   PointCloudC::Ptr extract_out(new PointCloudC());
   
+  // Bounding box for the table
+  shape_msgs::SolidPrimitive table_shape;
+  geometry_msgs::Pose table_pose;
+  FitBox(*table_cloud, coeff, *extract_out, table_shape, table_pose);
+      
+  recycle::Object *table = new recycle::Object;
+  ROS_INFO("%s", table_cloud->header.frame_id.c_str());
+  table->cloud = table_cloud;
+  table->pose = table_pose;
+  table->dimensions.x = table_shape.dimensions[1]; // Hacky fix
+  table->dimensions.y = table_shape.dimensions[0];
+  table->dimensions.z = table_shape.dimensions[2];
+  ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
+  ROS_INFO_STREAM("TABLE POSE " << table_pose);
+
+  obstacles->push_back(*table);
+
   // segmenting surface objects
   std::vector<pcl::PointIndices> object_indices;
-  SegmentSurfaceObjects(cloud, table_inliers, &object_indices);
+  Segmenter::SegmentSurfaceObjects(cloud, table_inliers, &object_indices);
   
   extract.setNegative(true);
   extract.filter(*above_surface_cloud);
@@ -168,8 +190,10 @@ void SegmentTabletopScene(PointCloudC::Ptr cloud,
   }
 }
 
-Segmenter::Segmenter(const ObjectRecognizer& recognizer)
-    : recognizer_(recognizer) {}
+Segmenter::Segmenter(const ros::Publisher& table_cloud_pub,
+                      const ObjectRecognizer& recognizer)
+    : table_cloud_pub_(table_cloud_pub), 
+    recognizer_(recognizer) {}
 
 void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                                    recycle_msgs::ClassifyResult* result) {
@@ -179,8 +203,19 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
 
     std::vector<Object> objects;
+    std::vector<Object> obstacles;
     PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-    SegmentTabletopScene(cloud, &objects, above_surface_cloud); 
+    Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
+
+    result->num_obstacles = obstacles.size();
+    for (size_t i = 0; i < obstacles.size(); ++i) {
+      const Object& obstacle = obstacles[i];  
+      geometry_msgs::PoseStamped poseStamped;
+      poseStamped.header.frame_id = "base_link";
+      poseStamped.pose = obstacle.pose;
+      result->obstacle_poses.push_back(poseStamped);
+      result->obstacle_dimensions.push_back(obstacle.dimensions);
+    }
 
     result->num_objects = objects.size();
 
@@ -189,8 +224,8 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
       geometry_msgs::PoseStamped poseStamped;
       poseStamped.header.frame_id = "base_link";
       poseStamped.pose = object.pose;
-      result->poses.push_back(poseStamped);
-      result->dimensions.push_back(object.dimensions);
+      result->object_poses.push_back(poseStamped);
+      result->object_dimensions.push_back(object.dimensions);
 
       // Recognize the object.
       std::string name;

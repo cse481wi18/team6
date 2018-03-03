@@ -13,10 +13,6 @@ namespace recycle {
       as_.start();
   }
 
-  // void PointCloudCallback(const sensor_msgs::PointCloud2& msg) {
-  //   pcloud_ = msg;
-  // }
-
   void Classifier::ActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
     recycle_msgs::ClassifyResult result;
 
@@ -25,11 +21,8 @@ namespace recycle {
     sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
     
     ROS_INFO("RECEIVED MESSAGE");
-    sensor_msgs::PointCloud2 pc;
     PointCloudC::Ptr cloud(new PointCloudC());
-    pc = * msg;
-    pcl::fromROSMsg(pc, *cloud);
-
+    pcl::fromROSMsg(* msg, *cloud);
 
     ROS_INFO("TRYING TO CROP");
     
@@ -52,27 +45,16 @@ namespace recycle {
     ROS_INFO("LOADED DATASET");
 
     ROS_INFO("SEGMENGTING");
-    recycle::Segmenter segmenter(recognizer);
+    ros::NodeHandle nh;
+    ros::Publisher table_pub =
+      nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
+    
+    recycle::Segmenter segmenter(table_pub, recognizer);
     segmenter.SegmentAndClassify(downsampled, &result);
     ROS_INFO("SEGMENTED");
 
     ROS_INFO("REPLYING TO CLIENT");
-    // result.num_objects = 3;
-    // result.classifications.push_back("coffee_cup_no_sleeve");    
-    // result.classifications.push_back("crumpled_paper");
-    // result.classifications.push_back("nature_valley_wrapper");
-    // geometry_msgs::PoseStamped pose;
-    // result.poses.push_back(pose);    
-    // result.poses.push_back(pose);
-    // result.poses.push_back(pose);
-    // geometry_msgs::Vector3 dim;
-    // result.dimensions.push_back(dim);
-    // result.dimensions.push_back(dim);
-    // result.dimensions.push_back(dim);
-
     as_.setSucceeded(result);
     ROS_INFO("REPLIED");
-
-
   } 
 }
