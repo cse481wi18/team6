@@ -1,0 +1,56 @@
+with respect to the robot
+
+right-most bin xy center
+/gripper_teleop handle_feedback:183: header: 
+  seq: 327
+  stamp: 
+    secs: 0
+    nsecs:         0
+  frame_id: base_link
+pose: 
+  position: 
+    x: 0.140882134438
+    y: -0.15955811739
+    z: 0.812051057816
+  orientation: 
+    x: 4.06751468063e-08
+    y: 0.680220544338
+    z: 2.30697419501e-10
+    w: 0.73300755024
+
+center
+/gripper_teleop handle_feedback:183: header: 
+  seq: 1044
+  stamp: 
+    secs: 0
+    nsecs:         0
+  frame_id: base_link
+pose: 
+  position: 
+    x: 0.182187214494
+    y: -0.0019529312849
+    z: 0.815143942833
+  orientation: 
+    x: 4.116074237e-08
+    y: 0.690317571163
+    z: 4.26922996954e-10
+    w: 0.723506510258
+
+
+LEFT
+/gripper_teleop handle_feedback:183: header: 
+  seq: 1296
+  stamp: 
+    secs: 0
+    nsecs:         0
+  frame_id: base_link
+pose: 
+  position: 
+    x: 0.172201097012
+    y: 0.154245600104
+    z: 0.814674854279
+  orientation: 
+    x: 4.116074237e-08
+    y: 0.690317571163
+    z: 4.26922996954e-10
+    w: 0.723506510258

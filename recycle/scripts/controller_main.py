@@ -22,6 +22,7 @@ def main():
     torso.set_height(0.4)
     
     controller = Controller(move_request_topic, classify_action)
+    rospy.on_shutdown(controller.shutdown)
     controller.start()
 
 
