@@ -21,6 +21,10 @@
         width: 90%;
         height: 16.5vh;
       }
+
+      .trash-icon {
+        fill: var(--paper-grey-500);
+      }
     </style>
     <!-- ROS setup
     <ros-websocket auto ros="{{ros}}"
@@ -50,12 +54,12 @@
         <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
       </div>
       <div class="card-actions">
-        <p>[[topic]]</p>
+        <p>[[item.topic]]</p>
         <div class="horizontal justified">
-          <iron-icon icon="icons:delete-sweep"></iron-icon>
-          <paper-button>Trash</paper-button>
-          <paper-button>Recycle</paper-button>
-          <paper-button>Compost</paper-button>
+          <iron-icon class='trash-icon' icon="icons:delete-sweep"></iron-icon>
+          <paper-button on-tap="_labelTrash">Trash</paper-button>
+          <paper-button on-tap="_labelRecycle">Recycle</paper-button>
+          <paper-button on-tap="_labelCompost">Compost</paper-button>
         </div>
       </div>
     </paper-card>
@@ -70,7 +74,12 @@
       static get properties() {
         return {
             id: Number,
-            topic: String
+            item: {
+              type: Object,
+              value: {
+                pointcloud_topic: '',
+              }
+            }
         };
       }
 
@@ -94,8 +103,32 @@
         console.log('Pose list: ', msg);
       }
 
+      _labelTrash(evt) {
+        this._correctLabel('trash');
+      }
+
+      _labelRecycle(evt) {
+        this._correctLabel('recycle');
+      }
+
+      _labelCompost(evt) {
+        this._correctLabel('compost');
+      }
+
+      _correctLabel(type) {
+        console.log(type);
+        this.dispatchEvent(new CustomEvent('labelCorrection', {
+          bubbles: true,
+          composed: true,
+          detail: {
+            item: this.item,
+            correctLabel: type
+          }
+        }));
+      }
+
       ready() {
-        console.log('Card with topic', this.topic);
+        console.log('Card with topic', this.item.pointcloud_topic);
         super.ready();
         var config = {
           "globalOptions": {

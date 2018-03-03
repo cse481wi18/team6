@@ -57,10 +57,8 @@
     <div>
         <h3>[[title]]</h3>
 
-        <!-- TODO: loop over items -->
-
         <template is="dom-repeat" items="[[items.log_items]]">
-          <recycle-ui-class-card topic="{{item.pointcloud_topic}}"></recycle-ui-class-card>
+          <recycle-ui-class-card class="item-card" item="{{item}}"></recycle-ui-class-card>
         </template>
 
 
@@ -82,6 +80,10 @@
         return {
           type: String,
           title: String,
+          lastId: {
+              type: Number,
+              value: 0
+          },
           items: {
             type: Object,
             value: {
@@ -131,6 +133,11 @@
         this.$.logTopic.publish(msg);
       }
 
+      _correctItem(evt) {
+        // TODO: send event to server
+        console.log('Clicked', evt.detail.correctLabel);
+      }
+
       _handleResponse(evt) {
         var msg = evt.detail;
 
@@ -148,7 +155,7 @@
 
       ready() {
         super.ready();
-        this.lastId = 0;
+        this.addEventListener('labelCorrection', this._correctItem);
       }
     }
 
