@@ -17,9 +17,8 @@ MOVE_BASE_ACTION = 'move_base'
 
 class Controller(object):
 
-    # angle to look down at the table
-    LOOK_DOWN_ANGLE = math.pi / 4
-
+    LOOK_DOWN_ANGLE = math.pi / 4  # angle to look down at the table
+    MIN_CONFIDENCE = 1.0 #TODO 0.5  # threshold for when to default to landfill
     # TODO fill in position of the bins in PoseStamped (frame in base_link?)
     BIN_POSES = {
         "compost": None,
@@ -27,8 +26,7 @@ class Controller(object):
         "landfill": None
     }
 
-    def __init__(self, move_request_topic, classify_action, category_map):
-        self._category_map = category_map
+    def __init__(self, move_request_topic, classify_action):
         self._request_queue = []
 
         # init robot body controllers
@@ -39,19 +37,7 @@ class Controller(object):
         self._planning_scene = PlanningSceneInterface('base_link')
         self._planning_scene.clear()
         self._num_prev_obstacles = 0
-
-        # create orientation contraint for the crane position
-        # it needs to be created only once, and then added to the MoveBuilderGoal
-        oc_crane = OrientationConstraint()
-        oc_crane.header.frame_id = 'base_link'
-        oc_crane.link_name = 'wrist_roll_link'
-        oc_crane.weight = 1.0
-        oc.orientation.w = 0.707
-        oc.orientation.y = -0.707
-        oc.absolute_x_axis_tolerance = 0.1
-        oc.absolute_y_axis_tolerance = 0.1
-        oc.absolute_z_axis_tolerance = 3.14
-
+        self._crane_oc = self._create_crane_oc()
 
         # init subscribers and action clients
         self._move_request_sub = rospy.Subscriber(move_request_topic,
@@ -74,6 +60,21 @@ class Controller(object):
         self._marker_pub = rospy.Publisher('recycle/object_markers', Marker, queue_size=10)
 
         rospy.loginfo("Done init")
+
+
+    def _create_crane_oc(self):
+        # create orientation contraint for the crane gripper position
+        # it only needs to be created once, and then passed into arm
+        oc = OrientationConstraint()
+        oc.header.frame_id = 'base_link'
+        oc.link_name = 'wrist_roll_link'
+        oc.weight = 1.0
+        oc.orientation.w = 0.707
+        oc.orientation.y = -0.707
+        oc.absolute_x_axis_tolerance = 0.1
+        oc.absolute_y_axis_tolerance = 0.1
+        oc.absolute_z_axis_tolerance = 3.14
+        return oc
 
 
     def _move_request_cb(self, msg):
@@ -115,7 +116,7 @@ class Controller(object):
                 self._bus_objects(classifier_result)
 
             elif request.action == "home":
-                continue
+                pass
 
             else:
                 rospy.logerr("Unknown action!")
@@ -143,13 +144,19 @@ class Controller(object):
         for i in range(classifier_result.num_obstacles):
             obstacle_pose = classifier_result.obstacle_poses[i]
             obstacle_dim = classifier_result.obstacle_dimensions[i]
+
             print("TABLE LOCATION")
             print([obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
                 obstacle_pose.pose.position.x, obstacle_pose.pose.position.y, obstacle_pose.pose.position.z])
+
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
-                                        obstacle_pose.pose.position.x, obstacle_pose.pose.position.y, obstacle_dim.z / 2.0) # Hacky fix
+                                        obstacle_dim.x, 
+                                        obstacle_dim.y, 
+                                        obstacle_dim.z,
+                                        obstacle_pose.pose.position.x, 
+                                        obstacle_pose.pose.position.y, 
+                                        obstacle_dim.z / 2.0) # Hacky fix
 
 
     def _bus_objects(self, classifier_result):
@@ -158,18 +165,20 @@ class Controller(object):
         for i in range(classifier_result.num_objects):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
-            obj_name = classifier_result.classifications[i]
-            category = self._category_map[obj_name]
+
+            # if confidence < thresh, default to landfill
+            if classifier_result.confidence[i] < self.MIN_CONFIDENCE:
+                category = 'landfill'
+            else:
+                category = classifier_result.classifications[i]
             bin_pose = self.BIN_POSES[category]
 
             # DEBUG
-            self._pub_object_marker(i, obj_name, obj_posestamped.pose, obj_dim)
+            self._pub_object_marker(i, category, obj_posestamped.pose, obj_dim)
 
-
-            # if confidence < thresh, default to landfill
             self._pickup_object(obj_posestamped, obj_dim, bin_pose)
 
-            rospy.loginfo("Done with object {}: \'{}\' to {}".format(i, obj_name, category))
+            rospy.loginfo("Done with object {}: {}".format(i, category))
 
         # TODO put arm back to 'home position'
 

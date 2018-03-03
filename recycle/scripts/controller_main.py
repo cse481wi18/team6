@@ -17,25 +17,12 @@ def main():
     move_request_topic = rospy.get_param('move_request_topic')
     classify_action = rospy.get_param('classify_action')
 
-    # TODO grab from the database??
-    category_map = {
-        "coffee_cup_sleeve": "compost",
-        "coffee_cup_no_sleeve": "recycle",
-        "crumpled_paper": "recycle",
-        "nature_valley_wrapper": "landfill",
-
-        # Testing
-        'yellow_dog_toy': 'compost',
-    }
-
     # TODO always set torso to max height?? here?
     torso = Torso()
     torso.set_height(0.4)
     
-    controller = Controller(move_request_topic, classify_action, category_map)
+    controller = Controller(move_request_topic, classify_action)
     controller.start()
-    # controller._classify_objects()
-    # rospy.spin()
 
 
 if __name__ == '__main__':
