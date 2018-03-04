@@ -1,8 +1,11 @@
 <launch>
   <!-- Map annotator server -->
   <!-- You can pass command-line args to your server using the args attribute below. -->
-  <!-- <node pkg="map_annotator" type="server.py" name="map_annotator_server" args="$(env HOME)/our_pose_db_name.db"/> -->
+  <node pkg="recycle_ui" type="map_annotator_server.py" name="recycle_map_annotator" args="$(env HOME)/our_pose_db_name.db"/>
   <node pkg="recycle_ui" type="classification_server.py" name="classification_server" />
+  <node pkg="web_video_server" type="web_video_server" name="web_video_server">
+    <param name="port" value="8000" />
+  </node>
 
   <!-- Web prereqs -->
   <include file="$(find rosbridge_server)/launch/rosbridge_websocket.launch" />
