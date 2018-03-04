@@ -1,0 +1,154 @@
+<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
+
+<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
+<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
+<link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
+
+<dom-module id="recycle-ui-add-control">
+  <template>
+    <style>
+      :host {
+        height: 100%;
+      }
+
+      #col1 {
+        width: 40%;
+        height: 100%;
+      }
+
+      #col2 {
+        height: 100%;
+      }
+
+      .column {
+        display: inline-block;
+        vertical-align: top;
+      }
+
+      #controls {
+        padding-left: 10px;
+      }
+
+      #camera img {
+        height: auto;
+      }
+    </style>
+
+    <!-- ROS setup
+    <ros-websocket auto ros="{{ros}}"
+      url="{{url}}"
+      on-connection="_handleConnection"
+      on-close="_handleClose"
+      on-error="_handleError">
+    </ros-websocket>
+
+    <ros-topic auto
+      ros="{{ros}}"
+      topic="map_annotator/pose_names"
+      msg-type="map_annotator/PoseNames"
+      last-message="{{poseNames}}"
+      on-message="_handlePoseNames">
+    </ros-topic>
+
+    <ros-topic auto
+      id="userActions"
+      topic="map_annotator/user_actions"
+      ros="{{ros}}"
+      msg-type="map_annotator/UserAction">
+    </ros-topic> -->
+
+    <div id="add-main" class="layout vertical">
+      <div id="classes-content" class="layout horizontal">
+        <div class="column" id="col1">
+          <div id="camera">
+            <img src="//[[hostname]]:8000/stream?topic=/head_camera/rgb/image_raw"></img>
+          </div>
+
+          <div id="controls">
+
+            <paper-dropdown-menu id="dropdown" label="What type waste is this item?">
+              <paper-listbox slot="dropdown-content" selected="2">
+                <paper-item>Trash</paper-item>
+                <paper-item>Recycle</paper-item>
+                <paper-item>Compost</paper-item>
+              </paper-listbox>
+            </paper-dropdown-menu>
+
+            <paper-button raised id="record-button" on-tap="_handleRecord">Record</paper-button>
+          </div>
+        </div>
+
+        <div class="column" id="col2">
+          <div id="instructions">
+              <p>Use this tool to add a new item to the inventory.</p>
+
+              <b>Instructions:</b>
+              <ol>
+                <li>Place the item by itself on a table in front of the robot and make sure it's visible in the camera feed above.</li>
+                <li>Select the type of waste and press record</li>
+                <li>Repeat steps 1 and 2 for the same object in different orientations
+                  <ul>
+                    <li>Rotate the object so the robot can see another side</li>
+                    <li>Place the object on its side or upside down so the robot can identify it in various positions</li>
+                  </ul>
+                </li>
+              </ol>
+          </div>
+        </div>
+      </div>
+    </div>
+  </template>
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class AddControllerApp extends Polymer.Element {
+      static get is() { return 'recycle-ui-add-control'; }
+      static get properties() {
+        return {
+          prop1: {
+            type: String,
+            value: 'recycle-ui-app'
+          }
+        };
+      }
+
+      _handleConnection() {
+        this.status = 'Connected to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleClose() {
+        this.status = 'Closed connection to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handleError() {
+        this.status = 'Error connecting to the websocket server.';
+        console.log(this.status);
+      }
+
+      _handlePoseNames(evt) {
+        var msg = evt.detail;
+      }
+
+      _handleRecord(evt) {
+          console.log(this.$.dropdown.selectedItemLabel);
+      }
+
+      ready() {
+        super.ready();
+        this.hostname = window.location.hostname;
+
+      }
+    }
+
+    window.customElements.define(AddControllerApp.is, AddControllerApp);
+  </script>
+</dom-module>

@@ -18,6 +18,7 @@
 
 <link rel="import" href="recycle-ui-map-control.html">
 <link rel="import" href="recycle-ui-class-control.html">
+<link rel="import" href="recycle-ui-add-control.html">
 
 <dom-module id="recycle-ui-app">
   <template>
@@ -95,6 +96,7 @@
 
           <a name="map" href="/map">Map View</a>
           <a name="classifications" href="/classifications">Classifications View</a>
+          <a name="add" href="/add">New Item View</a>
         </iron-selector>
       </app-drawer>
 
@@ -111,6 +113,7 @@
         <iron-pages selected="[[routeData.view]]" attr-for-selected="name" fallback-selection="map">
           <recycle-ui-class-control name="classifications" route="{{subRoute}}"></recycle-ui-class-control>
           <recycle-ui-map-control name="map" route="{{subRoute}}"></recycle-ui-map-control>
+          <recycle-ui-add-control name="add" route="{{subRoute}}"></recycle-ui-add-control>
         </iron-pages>
       </app-header-layout>
     </app-drawer-layout>
