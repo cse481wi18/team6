@@ -21,24 +21,25 @@ class Controller(object):
     LOOK_DOWN_ANGLE = math.pi / 4  # angle to look down at the table
 
     GRIPPER_BASE_OFFSET = 0.166 - 0.03  # offset between wrist_roll_link and the base of the gripper
-    GRASP_DIST = 0.02  # gripper base 2cm above the object
-    
     GRIPPER_FINGERTIP_OFFSET = 0.166 + 0.03   # offset between wrist_roll_link and the END of the fingertips
-    PRE_GRASP_DIST = 0.05  # fingertips 5cm above the object
 
+    PRE_GRASP_DIST = 0.05  # fingertips 5cm above the object
+    GRASP_DIST = 0.02  # gripper base 2cm above the object
+    TABLE_DIST = 0.005  # fingertip 0.5cm above the table
     POST_GRASP_DIST = 0.05 # move 5cm back upwards after grasping
 
-    CRANE_ORIENTATION = Quaternion(0.00878962595016, 
-                                   0.711250066757, 
+    CRANE_ORIENTATION = Quaternion(0.00878962595016,
+                                   0.711250066757,
                                    -0.00930198933929,
                                    0.702822685242)
 
-    MIN_CONFIDENCE = 1.0 #TODO 0.5  # threshold for when to default to landfill
     # TODO fill in position of the bins in PoseStamped (frame in base_link?)
+    # The center of the top of the bins in base_link frame.
+    # Right to left (for Astro): compost, landfill, recycle
     BIN_POSES = {
-        "compost": None,
-        "recycle": None,
-        "landfill": None
+        'compost': {'x': 0.140882134438, 'y': -0.15955811739, 'z': 0.515},
+        'landfill': {'x': 0.182187214494, 'y': -0.0019529312849, 'z': 0.515},
+        'recycle': {'x': 0.172201097012, 'y': 0.154245600104, 'z': 0.515}
     }
 
     def __init__(self, move_request_topic, classify_action):
@@ -54,6 +55,7 @@ class Controller(object):
         self._planning_scene.clear()
         self._num_prev_obstacles = 0
         self._crane_oc = self._create_crane_oc()
+        # TODO add bin obstacles
 
         # init subscribers and action clients
         self._move_request_sub = rospy.Subscriber(move_request_topic,
@@ -140,7 +142,7 @@ class Controller(object):
 
             else:
                 rospy.logerr("Unknown action!")
-            
+
             rospy.loginfo("Request completed.")
 
 
@@ -158,7 +160,7 @@ class Controller(object):
         self._planning_scene.clear()
         for i in range(self._num_prev_obstacles):
             self._planning_scene.removeCollisionObject('obstacle_' + str(i))
-        
+
         self._num_prev_obstacles = classifier_result.num_obstacles
 
         for i in range(classifier_result.num_obstacles):
@@ -172,11 +174,11 @@ class Controller(object):
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             # TODO: had to flip the x and y for some reason
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.y, 
-                                        obstacle_dim.x, 
+                                        obstacle_dim.y,
+                                        obstacle_dim.x,
                                         obstacle_dim.z,
-                                        obstacle_pose.pose.position.x, 
-                                        obstacle_pose.pose.position.y, 
+                                        obstacle_pose.pose.position.x,
+                                        obstacle_pose.pose.position.y,
                                         obstacle_dim.z / 2.0) # Hacky fix
 
 
@@ -186,12 +188,7 @@ class Controller(object):
         for i in range(classifier_result.num_objects):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
-
-            # if confidence < thresh, default to landfill
-            if classifier_result.confidence[i] < self.MIN_CONFIDENCE:
-                category = 'landfill'
-            else:
-                category = classifier_result.classifications[i]
+            category = classifier_result.classifications[i]
             bin_pose = self.BIN_POSES[category]
 
             # DEBUG
@@ -207,49 +204,57 @@ class Controller(object):
     # Given the target object's pose and dimension, and the target
     # bin's pose, pick up object and drop in the bin.
     def _pickup_object(self, obj_posestamped, obj_dim, bin_pose):
-        # TODO
-        # 1. Move gripper to top of obj_pose
-        #    a. gripper face down
-        #    b. object in the center of the gripper
-        # 2. Move down, grip object, move back up
-        # 3. Move to above bin_pose, drop object
-        self._gripper.open()
+        # TODO handle planning failures
+        # if planning failed at any given time, give up dont continue for
+        # this object, and move on to next object
 
         gripper_goal = copy.deepcopy(obj_posestamped)
         gripper_goal.pose.orientation = self.CRANE_ORIENTATION
-        obj_top_z = obj_posestamped.pose.position.z + obj_dim.z / 2.0
 
-        # 1. Move to pre-grasp pose: end of fingertips at Xcm above the object
-        gripper_goal.pose.position.z = (obj_top_z 
+        obj_top_z = obj_posestamped.pose.position.z + obj_dim.z / 2.0
+        obj_bottom_z = obj_posestamped.pose.position.z - obj_dim.z / 2.0
+
+        # 1. Move to pre-grasp pose: fingertips at Xcm above the object
+        self._gripper.open()
+        gripper_goal.pose.position.z = (obj_top_z
                                         + self.GRIPPER_FINGERTIP_OFFSET
                                         + self.PRE_GRASP_DIST)
         r = self._arm.move_to_pose(gripper_goal)
 
-        rospy.loginfo("pre grasp result: {}".format(r))
+        rospy.loginfo("pre grasp arm result: {}".format(r))
 
-        # 2. TODO: align gripper with shortest orientation
+        # 2. TODO: align gripper with shortest x or y orientation
         # modify gripper_goal.pose.orientation
 
-        # 3. Move down to grasp pose: gripper base X cm above the object
-        # TODO add orientation constraint
-        # TODO min of grasp pose or fingertip 0.5 cm above table
-        gripper_goal.pose.position.z = (obj_top_z 
-                                        + self.GRIPPER_BASE_OFFSET
-                                        + self.GRASP_DIST)
+        # 3. Move down to grasp pose and grip:
+        # max-z(gripper base X cm above the object, fingertip Ycm above table)
+        # TODO add orientation constrain?t
+        gripper_goal.pose.position.z = max(obj_top_z + self.GRIPPER_BASE_OFFSET + self.GRASP_DIST,
+                                           obj_bottom_z + self.GRIPPER_FINGERTIP_OFFSET + self.TABLE_DIST)
         r = self._arm.move_to_pose(gripper_goal)
         self._gripper.close()
 
-        rospy.loginfo("grasp result: {}".format(r))
+        rospy.loginfo("grasp arm result: {}".format(r))
 
-        #. Move Xcm back up
+        # 4. Move up to post-grasp pose: Xcm back up
         gripper_goal.pose.position.z += self.POST_GRASP_DIST
         r = self._arm.move_to_pose(gripper_goal)
 
         rospy.loginfo("post grasp result: {}".format(r))
 
+        # 5. Move to bin dropoff pose: fingertip obj-height above bin pose
+        gripper_goal.pose.position.x = bin_pose['x']
+        gripper_goal.pose.position.y = bin_pose['y']
+        gripper_goal.pose.position.z = bin_pose['z'] + self.GRIPPER_FINGERTIP_OFFSET + obj_dim.z
+        r = self._arm.move_to_pose(gripper_goal)
+
+        rospy.loginfo("bin pose result: {}".format(r))
+
+        # 6. Drop object
+        self._gripper.open()
+
         rospy.loginfo("obj_posestamped: {}".format(obj_posestamped))
         rospy.loginfo("obj_dim: {}".format(obj_dim))
-        # rospy.loginfo("pre grasp pose: {}".format(gripper_goal))
 
 
     ##### FOR DEBUGGING #####
