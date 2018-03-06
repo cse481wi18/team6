@@ -39,7 +39,7 @@
       }
     </style>
 
-    <!-- ROS setup
+    <!-- ROS setup -->
     <ros-websocket auto ros="{{ros}}"
       url="{{url}}"
       on-connection="_handleConnection"
@@ -47,6 +47,18 @@
       on-error="_handleError">
     </ros-websocket>
 
+    <ros-action-client  ros="{{ros}}"
+      id="client"
+      server="/recycle/add_item_action"
+      action-type="recycle_msg/AddItem"
+      last-feedback="{{lastFeedback}}"
+      last-result="{{lastResult}}"
+      on-feedback="_handleAddFeedback"
+      on-result="_handleAddResult">
+    </ros-action-client>
+
+
+    <!--
     <ros-topic auto
       ros="{{ros}}"
       topic="map_annotator/pose_names"
@@ -61,6 +73,7 @@
       ros="{{ros}}"
       msg-type="map_annotator/UserAction">
     </ros-topic> -->
+
 
     <div id="add-main" class="layout vertical">
       <div id="classes-content" class="layout horizontal">
@@ -139,7 +152,19 @@
       }
 
       _handleRecord(evt) {
-          console.log(this.$.dropdown.selectedItemLabel);
+        console.log(this.$.dropdown.selectedItemLabel);
+        var goal = {
+          category: this.$.dropdown.selectedItemLabel
+        };
+        this.$.client.send(goal);
+      }
+
+      _handleAddFeedback(evt) {
+        console.log('Feedback:', evt.detail);
+      }
+
+      _handleAddResult(evt) {
+        console.log('Result:', evt.detail);
       }
 
       ready() {

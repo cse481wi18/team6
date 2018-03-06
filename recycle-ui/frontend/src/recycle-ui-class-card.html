@@ -26,7 +26,6 @@
         fill: var(--paper-grey-500);
       }
     </style>
-    <!-- ROS setup
     <ros-websocket auto ros="{{ros}}"
       url="{{url}}"
       on-connection="_handleConnection"
@@ -34,6 +33,7 @@
       on-error="_handleError">
     </ros-websocket>
 
+    <!-- ROS setup
     <ros-topic auto
       ros="{{ros}}"
       topic="map_annotator/pose_names"
@@ -54,7 +54,7 @@
         <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
       </div>
       <div class="card-actions">
-        <p>[[item.topic]]</p>
+        <!--<p>ID: [[item.log_id]]</p>-->
         <div class="horizontal justified">
           <iron-icon class='trash-icon' icon="icons:delete-sweep"></iron-icon>
           <paper-button on-tap="_labelTrash">Trash</paper-button>
@@ -77,7 +77,7 @@
             item: {
               type: Object,
               value: {
-                pointcloud_topic: '',
+                log_id: 0,
               }
             }
         };
@@ -128,7 +128,7 @@
       }
 
       ready() {
-        console.log('Card with topic', this.item.pointcloud_topic);
+        console.log('Card with topic', this.item.log_id);
         super.ready();
         var config = {
           "globalOptions": {
@@ -154,37 +154,17 @@
             },
             {
               "isShown": true,
-              "name": "Map",
+              "name": "Point cloud",
               "options": {
-                "color": {
-                  "r": 255,
-                  "g": 255,
-                  "b": 255
-                },
-                "continuous": true,
-                "opacity": "1",
-                "topic": "/map"
+                "topic": "/log" + this.item.log_id + "_pointcloud",
+                "size": 0.01
               },
-              "type": "occupancyGrid"
-            },
-            {
-              "isShown": true,
-              "name": "Robot model",
-              "options": {
-                "param": "robot_description"
-              },
-              "type": "urdf"
-            },
-            {
-              "isShown": true,
-              "name": "Interactive Markers",
-              "options": {
-                "topic": "/map_annotator/map_poses"
-              },
-              "type": "interactiveMarkers"
+              "type": "pointCloud2"
             }
+
           ]
         };
+        console.log("config", config["displays"]);
         this.$.rviz.config = config;
       }
     }
