@@ -117,8 +117,6 @@ class Controller(object):
                                            self.BIN_POSES[category]['z'] - self.BIN_WIDTH/2.0,
                                            frame_attached_to,
                                            frames_okay_to_collide_with)
-            # self._planning_scene.setColor(name, 1, 0, 0)
-            # self._planning_scene.sendColors()
 
 
     def _move_request_cb(self, msg):
@@ -186,7 +184,6 @@ class Controller(object):
 
     def _add_obstacles(self, classifier_result):
         # Clearing all the previous obstacles in the planning scene
-        self._planning_scene.clear()
         for i in range(self._num_prev_obstacles):
             self._planning_scene.removeCollisionObject('obstacle_' + str(i))
 
@@ -306,8 +303,15 @@ class Controller(object):
 
 
     def _attach_object_obstacle(self, obj_dim):
+        # TODO FOR SOME REASON
+        # adding the obj second time get added to collision not attach
+        rospy.logerr("ATTACH")
+        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
         name = 'grabbed_object'
         self._planning_scene.removeAttachedObject(name)
+        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
@@ -319,14 +323,18 @@ class Controller(object):
                                        0, 0, # y pos, z pos
                                        frame_attached_to, 
                                        frames_okay_to_collide_with)
-        self._planning_scene.setColor(name, 1, 0, 0)
-        self._planning_scene.sendColors()
+        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
 
     def _detach_object_obstacle(self):
+        rospy.logerr("DETACH")
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
         self._planning_scene.removeAttachedObject('grabbed_object')
+        self._planning_scene.removeCollisionObject('grabbed_object')
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
 
 
