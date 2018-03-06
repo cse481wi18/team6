@@ -7,7 +7,7 @@ import fetch_api
 import rospy
 from moveit_python import PlanningSceneInterface
 
-from geometry_msgs.msg import PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from moveit_msgs.msg import OrientationConstraint
 from recycle_msgs.msg import ActionPose
@@ -23,27 +23,32 @@ class Controller(object):
     GRIPPER_BASE_OFFSET = 0.166 - 0.03  # offset between wrist_roll_link and the base of the gripper
     GRIPPER_FINGERTIP_OFFSET = 0.166 + 0.03   # offset between wrist_roll_link and the END of the fingertips
 
-    PRE_GRASP_DIST = 0.05  # fingertips 5cm above the object
+    PRE_GRASP_DIST = 0.03  # fingertips 5cm above the object
     GRASP_DIST = 0.02  # gripper base 2cm above the object
     TABLE_DIST = 0.005  # fingertip 0.5cm above the table
     POST_GRASP_DIST = 0.05 # move 5cm back upwards after grasping
+
+    NUM_ARM_ATTEMPTS = 3
 
     CRANE_ORIENTATION = Quaternion(0.00878962595016,
                                    0.711250066757,
                                    -0.00930198933929,
                                    0.702822685242)
 
-    # TODO fill in position of the bins in PoseStamped (frame in base_link?)
     # The center of the top of the bins in base_link frame.
     # Right to left (for Astro): compost, landfill, recycle
+    DROPOFF_X_PADDING = 0.05
+    DROPOFF_Z_PADDING = 0.00
+    BIN_WIDTH = 0.153
     BIN_POSES = {
-        'compost': {'x': 0.140882134438, 'y': -0.15955811739, 'z': 0.515},
-        'landfill': {'x': 0.182187214494, 'y': -0.0019529312849, 'z': 0.515},
-        'recycle': {'x': 0.172201097012, 'y': 0.154245600104, 'z': 0.515}
+        'compost': {'x': 0.18, 'y': -0.15955811739, 'z': 0.515},
+        'landfill': {'x': 0.18, 'y': -0.0019529312849, 'z': 0.515},
+        'recycle': {'x': 0.18, 'y': 0.154245600104, 'z': 0.515}
     }
 
     def __init__(self, move_request_topic, classify_action):
         self._request_queue = []
+        self._move_summary = []
 
         # init robot body controllers
         self._head = fetch_api.Head()
@@ -53,9 +58,9 @@ class Controller(object):
         # Planning Scene Interface
         self._planning_scene = PlanningSceneInterface('base_link')
         self._planning_scene.clear()
+        self._attach_bin_obstacles()
         self._num_prev_obstacles = 0
         self._crane_oc = self._create_crane_oc()
-        # TODO add bin obstacles
 
         # init subscribers and action clients
         self._move_request_sub = rospy.Subscriber(move_request_topic,
@@ -95,6 +100,27 @@ class Controller(object):
         return oc
 
 
+    def _attach_bin_obstacles(self):
+        for category in self.BIN_POSES:
+            self._planning_scene.removeAttachedObject(category + "_bin")
+
+        frame_attached_to = 'base_link'
+        frames_okay_to_collide_with = ['base_link', 'laser_link']
+
+        for category in self.BIN_POSES:
+            rospy.logerr('add bin obstacle: {}'.format(category))
+            name = category + "_bin"
+            self._planning_scene.attachBox(name, 
+                                           self.BIN_WIDTH, self.BIN_WIDTH, self.BIN_WIDTH,
+                                           self.BIN_POSES[category]['x'],
+                                           self.BIN_POSES[category]['y'],
+                                           self.BIN_POSES[category]['z'] - self.BIN_WIDTH/2.0,
+                                           frame_attached_to,
+                                           frames_okay_to_collide_with)
+            # self._planning_scene.setColor(name, 1, 0, 0)
+            # self._planning_scene.sendColors()
+
+
     def _move_request_cb(self, msg):
         # add goal pose to queue
         self._request_queue.append(msg)
@@ -103,6 +129,9 @@ class Controller(object):
 
     def shutdown():
         self._arm.cancel_all_goals()
+
+        for category in self.BIN_POSES:
+            self._planning_scene.removeAttachedObject(category + "_bin")
 
 
     def start(self):
@@ -132,7 +161,7 @@ class Controller(object):
                 classifier_result = self._classify_pointcloud()
 
                 # add obstacles to PlanningScene for the arm
-                # self._add_obstacles(classifier_result) TODO
+                self._add_obstacles(classifier_result)
 
                 # now, bus the classified objects
                 self._bus_objects(classifier_result)
@@ -174,10 +203,10 @@ class Controller(object):
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             # TODO: had to flip the x and y for some reason
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.y,
                                         obstacle_dim.x,
+                                        obstacle_dim.y,
                                         obstacle_dim.z,
-                                        obstacle_pose.pose.position.x,
+                                        obstacle_pose.pose.position.x + 0.05, # TODO
                                         obstacle_pose.pose.position.y,
                                         obstacle_dim.z / 2.0) # Hacky fix
 
@@ -189,9 +218,14 @@ class Controller(object):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
             category = classifier_result.classifications[i]
+
+            # TODO remove
+            category = 'compost'
+
             bin_pose = self.BIN_POSES[category]
 
             # DEBUG
+            # self._pub_bin_markers()
             self._pub_object_marker(i, category, obj_posestamped.pose, obj_dim)
 
             self._pickup_object(obj_posestamped, obj_dim, bin_pose)
@@ -210,54 +244,98 @@ class Controller(object):
 
         gripper_goal = copy.deepcopy(obj_posestamped)
         gripper_goal.pose.orientation = self.CRANE_ORIENTATION
-
         obj_top_z = obj_posestamped.pose.position.z + obj_dim.z / 2.0
         obj_bottom_z = obj_posestamped.pose.position.z - obj_dim.z / 2.0
 
-        # 1. Move to pre-grasp pose: fingertips at Xcm above the object
+        # make sure gripper is initially open
         self._gripper.open()
+        # 1. Move to pre-grasp pose: fingertips at Xcm above the object
         gripper_goal.pose.position.z = (obj_top_z
                                         + self.GRIPPER_FINGERTIP_OFFSET
                                         + self.PRE_GRASP_DIST)
-        r = self._arm.move_to_pose(gripper_goal)
-
-        rospy.loginfo("pre grasp arm result: {}".format(r))
+        self._arm_move_to_pose_attempt(gripper_goal, "pre grasp")
 
         # 2. TODO: align gripper with shortest x or y orientation
         # modify gripper_goal.pose.orientation
 
-        # 3. Move down to grasp pose and grip:
+        # 3. Move down to grasp pose:
         # max-z(gripper base X cm above the object, fingertip Ycm above table)
-        # TODO add orientation constrain?t
+        # TODO add orientation constraint?
         gripper_goal.pose.position.z = max(obj_top_z + self.GRIPPER_BASE_OFFSET + self.GRASP_DIST,
                                            obj_bottom_z + self.GRIPPER_FINGERTIP_OFFSET + self.TABLE_DIST)
-        r = self._arm.move_to_pose(gripper_goal)
+        self._arm_move_to_pose_attempt(gripper_goal, "grasp")
+
+        # 4. Grip object and attach as obstacle
         self._gripper.close()
+        self._attach_object_obstacle(obj_dim)
 
-        rospy.loginfo("grasp arm result: {}".format(r))
-
-        # 4. Move up to post-grasp pose: Xcm back up
+        # 5. Move up to post-grasp pose: Xcm back up
         gripper_goal.pose.position.z += self.POST_GRASP_DIST
-        r = self._arm.move_to_pose(gripper_goal)
+        self._arm_move_to_pose_attempt(gripper_goal, "post grasp")
 
-        rospy.loginfo("post grasp result: {}".format(r))
-
-        # 5. Move to bin dropoff pose: fingertip obj-height above bin pose
-        gripper_goal.pose.position.x = bin_pose['x']
+        # 6. Move to bin dropoff pose: fingertip obj-height above bin pose
+        gripper_goal.pose.position.x = bin_pose['x'] + self.DROPOFF_X_PADDING
         gripper_goal.pose.position.y = bin_pose['y']
-        gripper_goal.pose.position.z = bin_pose['z'] + self.GRIPPER_FINGERTIP_OFFSET + obj_dim.z
-        r = self._arm.move_to_pose(gripper_goal)
+        gripper_goal.pose.position.z = (bin_pose['z']
+                                        + self.GRIPPER_FINGERTIP_OFFSET
+                                        + obj_dim.z
+                                        + self.DROPOFF_Z_PADDING)
+        self._arm_move_to_pose_attempt(gripper_goal, "bin")
 
-        rospy.loginfo("bin pose result: {}".format(r))
-
-        # 6. Drop object
+        # 7. Drop object and detach obstacle
         self._gripper.open()
+        self._detach_object_obstacle()
 
-        rospy.loginfo("obj_posestamped: {}".format(obj_posestamped))
-        rospy.loginfo("obj_dim: {}".format(obj_dim))
+        # DEBUG
+        # rospy.loginfo("obj_posestamped: {}".format(obj_posestamped))
+        # rospy.loginfo("obj_dim: {}".format(obj_dim))
+        self._print_move_summary()
 
 
-    ##### FOR DEBUGGING #####
+    def _arm_move_to_pose_attempt(self, goal, action_label):
+        for i in range(self.NUM_ARM_ATTEMPTS):
+            r = self._arm.move_to_pose(goal)
+            rospy.loginfo(action_label + " try{}: {}".format(i, r))
+            if r is None:
+                break
+        # give robot's arm time to settle down
+        rospy.sleep(1)
+
+        self._move_summary.append({'label': action_label, 'num_tried': i+1, 'result': r})
+        return r
+
+
+    def _attach_object_obstacle(self, obj_dim):
+        name = 'grabbed_object'
+        self._planning_scene.removeAttachedObject(name)
+
+        frame_attached_to = 'gripper_link'
+        frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
+        self._planning_scene.attachBox(name, 
+                                       obj_dim.z, # X dim: gripper's x axis points outwards, down in this case
+                                       obj_dim.x, # Y dim: TODO gripper's y axis connects the fingers, so the shortest dim
+                                       obj_dim.y, # Z dim: TODO gripper's z axis is perpendicular to the fingers
+                                       obj_dim.z/2.0, # X pos
+                                       0, 0, # y pos, z pos
+                                       frame_attached_to, 
+                                       frames_okay_to_collide_with)
+        self._planning_scene.setColor(name, 1, 0, 0)
+        self._planning_scene.sendColors()
+
+
+    def _detach_object_obstacle(self):
+        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+        self._planning_scene.removeAttachedObject('grabbed_object')
+        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
+
+
+
+    ################ FOR DEBUGGING ################
+    def _print_move_summary(self):
+        for entry in self._move_summary:
+            rospy.loginfo(entry['label'] + ": num_tried={}, res={}".format(entry['num_tried'], entry['result']))
+        self._move_summary = []
+
     def _pub_object_marker(self, i, obj_name, obj_pose, obj_dim):
         marker = Marker()
 
@@ -271,3 +349,25 @@ class Controller(object):
         marker.color.a = 0.3
 
         self._marker_pub.publish(marker)
+
+    def _pub_bin_markers(self):
+        marker = Marker()
+        i = 100
+        for category in self.BIN_POSES:
+            marker.ns = category
+            marker.id = i
+            marker.header.frame_id = 'base_link'
+            marker.type = Marker.CUBE
+            marker.pose = Pose()
+            marker.pose.position.x = self.BIN_POSES[category]['x']
+            marker.pose.position.y = self.BIN_POSES[category]['y']
+            marker.pose.position.z = self.BIN_POSES[category]['z'] - 0.153/2.0
+            marker.pose.orientation.w = 1
+            marker.scale.x = 0.153
+            marker.scale.y = 0.153
+            marker.scale.z = 0.153
+            marker.color.r = 1
+            marker.color.a = 0.5
+            self._marker_pub.publish(marker)
+            i += 1
+            rospy.logerr(marker)
