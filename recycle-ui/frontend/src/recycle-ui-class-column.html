@@ -1,10 +1,7 @@
-<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 
 <link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
 <link rel="import" href="../bower_components/ros-topic/ros-topic.html">
-<link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
 
 <link rel="import" href="recycle-ui-class-card.html">
 
@@ -48,19 +45,19 @@
     </ros-topic>
 
     <div>
-        <h3>[[title]]</h3>
+      <h3>[[title]]</h3>
 
-        <template is="dom-repeat" items="[[items.log_items]]">
-          <recycle-ui-class-card class="item-card" item="{{item}}"></recycle-ui-class-card>
-        </template>
+      <template is="dom-repeat" items="[[items.log_items]]">
+        <recycle-ui-class-card class="item-card" item="{{item}}"></recycle-ui-class-card>
+      </template>
 
-
-        <div class="arrow wrapper">
-          <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
-          <paper-icon-button icon="icons:arrow-forward" on-tap="_nextItems"></paper-icon-button>
-        </div>
+      <div class="arrow wrapper">
+        <paper-icon-button icon="icons:arrow-back" on-tap="_prevItems"></paper-icon-button>
+        <paper-icon-button icon="icons:arrow-forward" on-tap="_nextItems"></paper-icon-button>
+      </div>
     </div>
   </template>
+
   <script>
     NUM_DISPLAY = 3;
     /**
@@ -99,11 +96,6 @@
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
         console.log(this.status);
-      }
-
-      _handlePoseNames(evt) {
-        var msg = evt.detail;
-        console.log('Pose list: ', msg);
       }
 
       _nextItems() {

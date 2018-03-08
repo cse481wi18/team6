@@ -6,12 +6,10 @@
 <link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-<link rel="import" href="../bower_components/polymer-expressions/polymer-expressions.html">
 
 <link rel="import" href="../bower_components/ros-action-client/ros-action-client.html">
 <link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
 <link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
-<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
 
 <link rel="import" href="simple-dialog.html">
 
@@ -83,7 +81,7 @@
     </ros-action-client>
 
     <div id="add-main" class="layout vertical">
-     <simple-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal role="alertdialog">
+      <simple-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal role="alertdialog">
         <div id="rviz-container">
           <ros-rviz id="rviz" ros="[[ros]]" class="flex" hidden$="{{confirming}}"></ros-rviz>
         </div>
@@ -93,14 +91,7 @@
           <paper-button dialog-confirm autofocus on-tap="_handleCancelClick">Cancel</paper-button>
         </div>
       </simple-dialog>
-      <!--<paper-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal>
-        <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
-        <p>Important: Confirm that this looks like the object you wanted to save.</p>
-        <div class="buttons">
-          <paper-button dialog-confirm autofocus on-tap="_handleConfirm">Confirm</paper-button>
-          <paper-button dialog-confirm autofocus on-tap="_handleCancel">Cancel</paper-button>
-        </div>
-      </paper-dialog> -->
+
       <div id="classes-content" class="layout horizontal">
         <div class="column" id="col1">
 
@@ -125,19 +116,19 @@
 
         <div class="column" id="col2">
           <div id="instructions">
-              <p>Use this tool to add a new item to the inventory.</p>
+            <p>Use this tool to add a new item to the inventory.</p>
 
-              <b>Instructions:</b>
-              <ol>
-                <li>Place the item by itself on a table in front of the robot and make sure it's visible in the camera feed above.</li>
-                <li>Select the type of waste and press record</li>
-                <li>Repeat steps 1 and 2 for the same object in different orientations
-                  <ul>
-                    <li>Rotate the object so the robot can see another side</li>
-                    <li>Place the object on its side or upside down so the robot can identify it in various positions</li>
-                  </ul>
-                </li>
-              </ol>
+            <b>Instructions:</b>
+            <ol>
+              <li>Place the item by itself on a table in front of the robot and make sure it's visible in the camera feed above.</li>
+              <li>Select the type of waste and press record</li>
+              <li>Repeat steps 1 and 2 for the same object in different orientations
+              <ul>
+                <li>Rotate the object so the robot can see another side</li>
+                <li>Place the object on its side or upside down so the robot can identify it in various positions</li>
+              </ul>
+              </li>
+            </ol>
           </div>
         </div>
       </div>
@@ -150,7 +141,7 @@
      */
     class AddControllerApp extends Polymer.Element {
       static get is() { return 'recycle-ui-add-control'; }
-      static get behaviors() { return [Polymer.IronOverlayBehavior, PolymerExpressions]; }
+      static get behaviors() { return [Polymer.IronOverlayBehavior]; }
       static get properties() {
         return {
           prop1: {
@@ -177,10 +168,6 @@
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
         console.log(this.status);
-      }
-
-      _handlePoseNames(evt) {
-        var msg = evt.detail;
       }
 
       _handleRecord(evt) {
@@ -259,7 +246,6 @@
               },
               "type": "pointCloud2"
             }
-
           ]
         };
         this.$.rviz.config = config;

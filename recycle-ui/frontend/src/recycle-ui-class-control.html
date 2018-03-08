@@ -1,10 +1,4 @@
-<link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
-
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
-
-<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
-<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
-<link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
 
 <link rel="import" href="recycle-ui-class-column.html">
 
@@ -78,11 +72,6 @@
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
         console.log(this.status);
-      }
-
-      _handlePoseNames(evt) {
-        var msg = evt.detail;
-        console.log('Pose list: ', msg);
       }
     }
 

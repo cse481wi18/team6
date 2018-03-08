@@ -1,5 +1,5 @@
-<link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
 
 <dom-module id="recycle-ui-map-pose">
   <template>
@@ -35,20 +35,11 @@
       }
 
       _handleDelete(evt) {
-        //var msg = {
-        //  command: 'delete',
-        //  name: this.poseName
-        //};
-        //this.$.userActions.publish(msg);
         this._fireEvent('delete');
       }
 
       _handleGoto(evt) {
         this._fireEvent('goto');
-        //this.$.userActions.publish({
-        //  command: 'goto',
-        //  name: this.poseName
-        //});
       }
 
       _fireEvent(type) {
