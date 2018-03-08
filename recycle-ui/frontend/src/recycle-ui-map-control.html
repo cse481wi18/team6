@@ -194,8 +194,14 @@
         this.poseNameInput = "";
       }
 
+      _handlePoseEvent(evt) {
+        console.log('Pose Event', evt);
+        this.$.userActions.publish(evt.detail);
+      }
+
       ready() {
         super.ready();
+        this.addEventListener('poseEvent', this._handlePoseEvent);
         var config = {
           "globalOptions": {
             "background": "#111111",

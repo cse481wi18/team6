@@ -47,13 +47,6 @@
       on-message="_handleResponse">
     </ros-topic>
 
-    <!--<ros-topic auto
-      id="userActions"
-      topic="map_annotator/user_actions"
-      ros="{{ros}}"
-      msg-type="map_annotator/UserAction">
-    </ros-topic> -->
-
     <div>
         <h3>[[title]]</h3>
 
@@ -149,7 +142,9 @@
             maxId = logItems[i].log_id;
           }
         }
-        this.lastId = maxId;
+        if (logItems.length > 0) {
+          this.lastId = maxId;
+        }
         console.log(this.type, 'Message', msg, this.items, 'id', this.lastId);
       }
 

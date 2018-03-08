@@ -19,8 +19,6 @@ class MapPoses:
     POSES_FILE = '/home/team6/catkin_ws/src/cse481wi18/map_annotator/pickled_poses/web_poses.pickle'
 
     def __init__(self):
-        print('test')
-        rospy.loginfo('bar')
         if os.path.isfile(self.POSES_FILE):
             with open(self.POSES_FILE, 'rb') as f:
                 self._poses = pickle.load(f)
