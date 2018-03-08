@@ -1,1 +1,1 @@
-LogItem[] log_items
+recycle_msgs/LogItem[] log_items

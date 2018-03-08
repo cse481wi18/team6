@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 
 import rospy
-from recycle_ui.msg import ActiveLogs, GetLogPage, LogItem
+from recycle_msgs.msg import  LogItem
+from recycle_ui.msg import ActiveLogs, GetLogPage
 from sensor_msgs.msg import PointCloud2
 from perception import MockCamera
 import sqlite3
@@ -14,7 +15,7 @@ def wait_for_time():
     while rospy.Time().now().to_sec() == 0:
         pass
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/temp.db'
 class ClassificationServer():
 
     def __init__(self, waste_type):
@@ -32,23 +33,28 @@ class ClassificationServer():
 
     def _handle_get_log_page(self, get_log_page):
         rospy.logerr('GOT A MESSAGE')
+        rospy.logerr(get_log_page)
+        is_reverse_page = get_log_page.page_size < 0
+        sort_direction = 'DESC' if is_reverse_page else 'ASC'
+        log_id_inequality = 'log_id < ' if is_reverse_page else 'log_id > '
+        log_id_inequality += str(get_log_page.starting_log_num)
+        rospy.logerr(log_id_inequality)
+        rospy.logerr(sort_direction)
+
         conn = sqlite3.connect(DB_FILE)
         rospy.logerr('DB connected')
         c = conn.cursor()
-        # TODO Run this query once for each waste_type in waste_types
         c.execute('''SELECT
-                cl.log_id,
-                pred_ol.label,
-                act_ol.label,
-                cl.pointcloud_file_path
-            FROM classification_log cl
-            INNER JOIN object_labels pred_ol ON pred_ol.label_id=cl.predicted_label_id
-            INNER JOIN object_labels act_ol ON act_ol.label_id=cl.actual_label_id
-            INNER JOIN categories pred_cat ON pred_cat.category_id=pred_ol.category_id
-            WHERE pred_cat.name=?
-            AND cl.log_id > ?
-            LIMIT ?''',
-            (self._waste_type, get_log_page.starting_log_num, get_log_page.page_size))
+                  log_id,
+                  predicted_category,
+                  actual_category,
+                  pointcloud_file_path
+            FROM classification_log
+            WHERE predicted_category=?
+            AND {}
+            ORDER BY log_id {}
+            LIMIT ?'''.format(log_id_inequality, sort_direction),
+            (self._waste_type, abs(get_log_page.page_size)))
         logs = c.fetchall()
 
         log_items = []
@@ -56,20 +62,22 @@ class ClassificationServer():
             # build response fields
             rospy.logerr(log)
             rospy.logerr("PROCESSING LOG")
-            cloud_topic_name = 'log{}_pointcloud'.format(log[0])
+            cloud_topic_name = '/log{}_pointcloud'.format(log[0])
             log_items.append(LogItem(log_id=log[0],
-                predicted_item_label=str(log[1]),
-                predicted_waste_type=self._waste_type,
-                actual_label=str(log[2]),
-                pointcloud_topic=cloud_topic_name))
+                predicted_category=str(log[1]),
+                actual_category=str(log[2])))
 
             # prepare to publish pointclouds
-            #cloud = self._camera.read_cloud(log[3])
-            #pub = rospy.Publisher(cloud_topic_name, PointCloud2, latch=True, queue_size=1)
-            #pub.publish(cloud)
-            #self._active_cloud_pubs.append(pub)
+            rospy.logerr(log)
+            cloud = self._camera.read_cloud(log[3])
+            pub = rospy.Publisher(cloud_topic_name, PointCloud2, latch=True, queue_size=1)
+            pub.publish(cloud)
+            rospy.logerr('printed to {}'.format(cloud_topic_name))
+            self._active_cloud_pubs.append(pub)
 
+        log_items = sorted(log_items, key=lambda x: x.log_id)
         active_logs = ActiveLogs(log_items=log_items)
+        rospy.logerr(active_logs)
         self._active_log_pub.publish(active_logs);
         conn.close()
 

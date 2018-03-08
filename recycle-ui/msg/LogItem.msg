@@ -1,5 +1,0 @@
-int8 log_id
-string predicted_item_label
-string predicted_waste_type
-string actual_label
-string pointcloud_topic

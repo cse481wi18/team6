@@ -1,13 +1,19 @@
 <link rel="import" href="../bower_components/iron-flex-layout/iron-flex-layout-classes.html">
+<link rel="import" href="../bower_components/iron-overlay-behavior/iron-overlay-behavior.html">
 
-<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-dialog/paper-dialog.html">
+<link rel="import" href="../bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
 
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../bower_components/polymer-expressions/polymer-expressions.html">
 
+<link rel="import" href="../bower_components/ros-action-client/ros-action-client.html">
 <link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
-<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
 <link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
+<link rel="import" href="../bower_components/ros-topic/ros-topic.html">
+
+<link rel="import" href="simple-dialog.html">
 
 <dom-module id="recycle-ui-add-control">
   <template>
@@ -34,8 +40,20 @@
         padding-left: 10px;
       }
 
-      #camera img {
+      #display {
         height: auto;
+      }
+
+     /* #modal {
+        width: 50vh;
+        height: 40vh;
+        max-width: 50vh;
+        max-height: 40vh;
+      }*/
+
+      #rviz-container {
+        width: 50vh;
+        height: 40vh;
       }
     </style>
 
@@ -49,72 +67,74 @@
 
     <ros-action-client  ros="{{ros}}"
       id="client"
-      server="/recycle/add_item_action"
-      action-type="recycle_msg/AddItem"
+      server="/recycle_ui/add_item_action"
+      action-type="recycle_ui/AddItemAction"
       last-feedback="{{lastFeedback}}"
       last-result="{{lastResult}}"
       on-feedback="_handleAddFeedback"
       on-result="_handleAddResult">
     </ros-action-client>
 
+      <div id="add-main" class="layout vertical">
+       <simple-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal role="alertdialog">
+          <div id="rviz-container">
+            <ros-rviz id="rviz" ros="[[ros]]" class="flex" hidden$="{{confirming}}"></ros-rviz>
+          </div>
+          <p>Important: Confirm that this looks like the object you wanted to save.</p>
+          <div class="buttons">
+            <paper-button dialog-confirm autofocus on-tap="_handleConfirm">Confirm</paper-button>
+            <paper-button dialog-confirm autofocus on-tap="_handleCancel">Cancel</paper-button>
+          </div>
+        </simple-dialog>
+        <!--<paper-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal>
+          <ros-rviz id="rviz" ros="[[ros]]" class="flex"></ros-rviz>
+          <p>Important: Confirm that this looks like the object you wanted to save.</p>
+          <div class="buttons">
+            <paper-button dialog-confirm autofocus on-tap="_handleConfirm">Confirm</paper-button>
+            <paper-button dialog-confirm autofocus on-tap="_handleCancel">Cancel</paper-button>
+          </div>
+        </paper-dialog> -->
+        <div id="classes-content" class="layout horizontal">
+          <div class="column" id="col1">
 
-    <!--
-    <ros-topic auto
-      ros="{{ros}}"
-      topic="map_annotator/pose_names"
-      msg-type="map_annotator/PoseNames"
-      last-message="{{poseNames}}"
-      on-message="_handlePoseNames">
-    </ros-topic>
-
-    <ros-topic auto
-      id="userActions"
-      topic="map_annotator/user_actions"
-      ros="{{ros}}"
-      msg-type="map_annotator/UserAction">
-    </ros-topic> -->
+            <div id="display">
+              <img id="camera" src="//[[hostname]]:8000/stream?topic=/head_camera/rgb/image_raw" hidden$="{{confirming}}"></img>
+            </div>
 
 
-    <div id="add-main" class="layout vertical">
-      <div id="classes-content" class="layout horizontal">
-        <div class="column" id="col1">
-          <div id="camera">
-            <img src="//[[hostname]]:8000/stream?topic=/head_camera/rgb/image_raw"></img>
+            <div id="controls">
+
+              <paper-dropdown-menu id="dropdown" label="What type waste is this item?">
+                <paper-listbox slot="dropdown-content" selected="2">
+                  <paper-item>Trash</paper-item>
+                  <paper-item>Recycle</paper-item>
+                  <paper-item>Compost</paper-item>
+                </paper-listbox>
+              </paper-dropdown-menu>
+
+              <paper-button raised id="record-button" on-tap="_handleRecord">Record</paper-button>
+            </div>
           </div>
 
-          <div id="controls">
+          <div class="column" id="col2">
+            <div id="instructions">
+                <p>Use this tool to add a new item to the inventory.</p>
 
-            <paper-dropdown-menu id="dropdown" label="What type waste is this item?">
-              <paper-listbox slot="dropdown-content" selected="2">
-                <paper-item>Trash</paper-item>
-                <paper-item>Recycle</paper-item>
-                <paper-item>Compost</paper-item>
-              </paper-listbox>
-            </paper-dropdown-menu>
-
-            <paper-button raised id="record-button" on-tap="_handleRecord">Record</paper-button>
-          </div>
-        </div>
-
-        <div class="column" id="col2">
-          <div id="instructions">
-              <p>Use this tool to add a new item to the inventory.</p>
-
-              <b>Instructions:</b>
-              <ol>
-                <li>Place the item by itself on a table in front of the robot and make sure it's visible in the camera feed above.</li>
-                <li>Select the type of waste and press record</li>
-                <li>Repeat steps 1 and 2 for the same object in different orientations
-                  <ul>
-                    <li>Rotate the object so the robot can see another side</li>
-                    <li>Place the object on its side or upside down so the robot can identify it in various positions</li>
-                  </ul>
-                </li>
-              </ol>
+                <b>Instructions:</b>
+                <ol>
+                  <li>Place the item by itself on a table in front of the robot and make sure it's visible in the camera feed above.</li>
+                  <li>Select the type of waste and press record</li>
+                  <li>Repeat steps 1 and 2 for the same object in different orientations
+                    <ul>
+                      <li>Rotate the object so the robot can see another side</li>
+                      <li>Place the object on its side or upside down so the robot can identify it in various positions</li>
+                    </ul>
+                  </li>
+                </ol>
+            </div>
           </div>
         </div>
       </div>
-    </div>
   </template>
   <script>
     /**
@@ -123,11 +143,16 @@
      */
     class AddControllerApp extends Polymer.Element {
       static get is() { return 'recycle-ui-add-control'; }
+      static get behaviors() { return [Polymer.IronOverlayBehavior, PolymerExpressions]; }
       static get properties() {
         return {
           prop1: {
             type: String,
             value: 'recycle-ui-app'
+          },
+          confirming: {
+            type: Boolean,
+            value: false
           }
         };
       }
@@ -152,7 +177,7 @@
       }
 
       _handleRecord(evt) {
-        console.log(this.$.dropdown.selectedItemLabel);
+        console.log('Sending', this.$.dropdown.selectedItemLabel);
         var goal = {
           category: this.$.dropdown.selectedItemLabel
         };
@@ -165,12 +190,63 @@
 
       _handleAddResult(evt) {
         console.log('Result:', evt.detail);
+        this.$.rviz.set('config.displays.1.options.topic', evt.detail.pointcloud_topic);
+        this.$.modal.open();
+      }
+
+      _patchOverlay(evt) {
+        // Hack from https://github.com/PolymerElements/paper-dialog/issues/7
+        if (evt.target.withBackdrop) {
+          evt.target.parentNode.insertBefore(evt.target.backdropElement, evt.target);
+        }
+      }
+
+      _handleConfirm(evt) {
+          console.log('Confirm');
+      }
+
+      _handleCancel(evt) {
+          console.log('Cancel');
       }
 
       ready() {
         super.ready();
         this.hostname = window.location.hostname;
+        var config = {
+          "globalOptions": {
+            "background": "#111111",
+            "colladaLoader": "collada2",
+            "colladaServer": "http://localhost:8001/",
+            "fixedFrame": "/base_link",
+            "url": "ws://localhost:9090",
+            "videoServer": "http://localhost:9999"
+          },
+          "sidebarOpened": false,
+          "hideSidebar": true,
+          "displays": [
+            {
+              "isShown": true,
+              "name": "Grid",
+              "options": {
+                "cellSize": "1",
+                "color": "#cccccc",
+                "numCells": "10"
+              },
+              "type": "grid"
+            },
+            {
+              "isShown": true,
+              "name": "Point cloud",
+              "options": {
+                "topic": "",
+                "size": 0.01
+              },
+              "type": "pointCloud2"
+            }
 
+          ]
+        };
+        this.$.rviz.config = config;
       }
     }
 

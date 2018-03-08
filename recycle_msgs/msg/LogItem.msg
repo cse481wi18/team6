@@ -1,0 +1,6 @@
+int8 log_id
+string predicted_category
+string actual_category
+string image_file_path
+string pointcloud_file_path
+string feature_file_path

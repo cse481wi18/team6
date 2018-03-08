@@ -50,6 +50,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   ActionPose.msg
+  LogItem.msg
+  ObjectFeatures.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -70,12 +72,13 @@ add_action_files(
   DIRECTORY action
   FILES
   Classify.action
+  AddItem.action
 )
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  actionlib_msgs geometry_msgs std_msgs # Or other packages containing msgs
+  actionlib_msgs geometry_msgs recycle_msgs std_msgs # Or other packages containing msgs
 )
 
 ################################################

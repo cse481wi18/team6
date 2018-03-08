@@ -1,0 +1,9 @@
+#goal definition
+string category
+---
+#result definition
+
+#### Object (to add) ####
+recycle_msgs/LogItem to_log
+---
+#feedback

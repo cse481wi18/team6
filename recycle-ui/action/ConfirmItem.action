@@ -1,0 +1,8 @@
+# goal
+bool confirmed
+recycle_msgs/LogItem log_item
+---
+# result
+bool success
+---
+# feedback

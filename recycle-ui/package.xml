@@ -52,15 +52,25 @@
   <build_depend>fetch_api</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
-  <build_depend>message_generation</build_depend>
   <build_export_depend>fetch_api</build_export_depend>
   <build_export_depend>roscpp</build_export_depend>
   <build_export_depend>rospy</build_export_depend>
+  <build_depend>actionlib</build_depend>
+  <build_depend>actionlib_msgs</build_depend>
   <build_export_depend>message_runtime</build_export_depend>
   <exec_depend>fetch_api</exec_depend>
   <exec_depend>roscpp</exec_depend>
   <exec_depend>rospy</exec_depend>
   <exec_depend>message_runtime</exec_depend>
+  <exec_depend>actionlib</exec_depend>
+  <exec_depend>actionlib_msgs</exec_depend>
+  
+
+  <build_depend>message_generation</build_depend>
+  <build_depend>recycle_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <exec_depend>recycle_msgs</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->

@@ -1,0 +1,8 @@
+# goal definition
+string category
+---
+# result
+string pointcloud_topic
+recycle_msgs/LogItem log_item
+---
+# feedback
