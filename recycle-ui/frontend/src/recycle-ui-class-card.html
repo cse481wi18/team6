@@ -63,7 +63,8 @@
               type: Object,
               value: {
                 log_id: 0,
-              }
+              },
+              observer: '_updateItem'
             }
         };
       }
@@ -81,11 +82,6 @@
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
         console.log(this.status);
-      }
-
-      _handlePoseNames(evt) {
-        var msg = evt.detail;
-        console.log('Pose list: ', msg);
       }
 
       _labelTrash(evt) {
@@ -110,6 +106,10 @@
             correctLabel: type
           }
         }));
+      }
+
+      _updateItem(newVal, oldVal) {
+        this.$.rviz.set('config.displays.1.options.topic', '/log' + this.item.log_id + '_pointcloud');
       }
 
       ready() {

@@ -24,6 +24,7 @@ POINTCLOUD_TOPIC = 'confirm_pointcloud'
 class AddItemServer:
     def __init__(self):
         self._camera = MockCamera()
+        self._log_item = None
 
         # to talk to frontend
         self._add_item_server = actionlib.SimpleActionServer('/recycle_ui/add_item_action', UIAddItemAction, execute_cb=self._handle_add_item, auto_start=False)
@@ -48,6 +49,7 @@ class AddItemServer:
         #self._add_item_client.send_goal(goal)
         #self._add_item_client.wait_for_result()
         #result = self._add_item_client.get_result()
+        #self._log_item = result.log_item
 
         # publish pointcloud
         # TODO use real path
@@ -61,11 +63,14 @@ class AddItemServer:
         self._add_item_server.set_succeeded(new_result)
 
     def _handle_confirm_item(self, confirm_item):
-        rospy.logerr('ConfirmItem:' + str(confirm_item.log_item))
-
+        rospy.logerr('ConfirmItem:' + str(self._log_item) + str(confirm_item.confirmed))
         if confirm_item.confirmed:
             # TODO publish to logger topic and respond with success
-            pass
+            rospy.logerr('Confirm was true!')
+
+        this._log_item = None
+        result = ConfirmItemResult(success=True)
+        self._confirm_item_server.set_succeeded(result)
 
 
 def main():
