@@ -34,7 +34,13 @@
         font-size: 1.7em;
       }
 
-      #links {
+      #logo {
+        height: 40px;
+        weight: 40px;
+      }
+
+      #title {
+        margin-left: 15px;
       }
 
       #links > a {
@@ -76,7 +82,8 @@
       <app-header-layout fullbleed>
         <app-header slot="header" reveals effects="waterfall">
           <app-toolbar>
-            <div main-title>Recyclo-bot</div>
+            <img id="logo" src="../Recyclobot_Logo.png" alt="logo" />
+            <div id="title" main-title>Recyclo-bot</div>
             <div id="links">
                 <a href="/map">View Map</a> /
                 <a href="/classifications">View Classficiations</a> /

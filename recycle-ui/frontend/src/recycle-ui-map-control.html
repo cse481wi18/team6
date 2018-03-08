@@ -151,28 +151,21 @@
 
       _handleConnection() {
         this.status = 'Connected to the websocket server.';
-        console.log(this.status);
       }
 
       _handleClose() {
         this.status = 'Closed connection to the websocket server.';
-        console.log(this.status);
       }
 
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
-        console.log(this.status);
       }
 
       _handlePoseNames(evt) {
         var msg = evt.detail;
-        console.log('Pose list: ', msg);
       }
 
       _handleSave(evt) {
-        // TODO: Send message to server
-        console.log("save");
-
         var msg = {
           command: 'update',
           name: '',
@@ -185,7 +178,6 @@
         if (!this.poseNameInput) {
            poseName = 'Pose ' + (this.poseNames.names.length + 1);
         }
-        console.log('Creating pose', poseName);
         var msg = {
           command: 'create',
           name: poseName
@@ -195,7 +187,6 @@
       }
 
       _handlePoseEvent(evt) {
-        console.log('Pose Event', evt);
         this.$.userActions.publish(evt.detail);
       }
 
