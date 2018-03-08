@@ -22,13 +22,25 @@ class Segmenter {
   Segmenter(const ros::Publisher& table_cloud_pub,
             const ObjectRecognizer& recognizer);
   
+  // Does a complete tabletop segmentation pipeline.
+  //
+  // Args:
+  //  cloud: The point cloud with the surface and the objects above it.
+  //  objects: The output objects.
+  void SegmentTabletopScene(PointCloudC::Ptr cloud,
+                            std::vector<Object>* objects, 
+                            std::vector<Object>* obstacles,
+                            PointCloudC::Ptr above_surface_cloud);
+  
+
   void SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                           recycle_msgs::ClassifyResult* result);
 
  private:
   ros::Publisher table_cloud_pub_;
   ObjectRecognizer recognizer_;
-  
+  int CONFIDENCE_THRESHOLD;
+
   // Finds the largest horizontal surface in the given point cloud.
   // This is useful for adding a collision object to MoveIt.
   //
@@ -44,14 +56,5 @@ class Segmenter {
   void SegmentSurfaceObjects(PointCloudC::Ptr cloud,
                              pcl::PointIndices::Ptr surface_indices,
                              std::vector<pcl::PointIndices>* object_indices);
-  // Does a complete tabletop segmentation pipeline.
-  //
-  // Args:
-  //  cloud: The point cloud with the surface and the objects above it.
-  //  objects: The output objects.
-  void SegmentTabletopScene(PointCloudC::Ptr cloud,
-                            std::vector<Object>* objects, 
-                            std::vector<Object>* obstacles,
-                            PointCloudC::Ptr above_surface_cloud);
-};
+ };
 }  // namespace recycle

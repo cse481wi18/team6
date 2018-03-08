@@ -1,15 +1,20 @@
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Vector3.h"
 #include "recycle/classifier.h"
-// #include "recycle/saver.h"
+#include "recycle/crop.h"
+#include "recycle/downsample.h"
+#include "recycle/object_recognizer.h"
+#include "recycle/segmentation.h"
 
 namespace recycle {
-  Classifier::Classifier(std::string name) :
-    as_(nh_, name, boost::bind(&Classifier::ActionCallback, this, _1), false),
+  ItemAdder::ItemAdder(std::string name) :
+    as_(nh_, name, boost::bind(&ItemAdder::ActionCallback, this, _1), false),
     action_name_(name) {
       as_.start();
   }
 
-  void Classifier::ActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
-    recycle_msgs::ClassifyResult result;
+  void ItemAdder::ActionCallback(const recycle_msgs::AddItemGoalConstPtr &goal)  {
+    recycle_msgs::AddItemResult result;
 
     ROS_INFO("WAITING FOR MESSAGE");
     
@@ -41,19 +46,10 @@ namespace recycle {
     ros::NodeHandle nh;
     ros::Publisher table_pub =
       nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
-    ros::Publisher logging_pub =
-      nh.advertise<sensor_msgs::PointCloud2>("recycle/logger", 1, true);
     
     recycle::Segmenter segmenter(table_pub, recognizer);
     segmenter.SegmentAndClassify(downsampled, &result);
     ROS_INFO("SEGMENTED");
-
-    ROS_INFO("TALKING TO LOGGER");
-    for (int i = 0; i < result.num_objects; i++) {
-        recycle_msgs::LogItem item;
-        item.predicted_category = result.classifications[i];
-        ROS_INFO_STREAM("ITEM IS A " << result.classifications[i]);
-    }
 
     ROS_INFO("REPLYING TO CLIENT");
     as_.setSucceeded(result);

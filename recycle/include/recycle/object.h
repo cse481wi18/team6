@@ -10,6 +10,9 @@
 
 namespace recycle {
 struct Object {
+  std::string ff_name;
+  std::string pcf_name;
+  
   std::string name;
   double confidence;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;

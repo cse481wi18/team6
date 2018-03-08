@@ -1,0 +1,24 @@
+<launch>
+	<arg name="data_dir" />
+	<param name="ec_cluster_tolerance" value="0.03" />
+	<param name="ec_min_cluster_size" value="700" />
+	<param name="ec_max_cluster_size" value="7500" />
+	<param name="distance_above_plane" value="0.01" />
+	<param name="crop_min_x" value="-1" />
+	<param name="crop_max_x" value="1.2" />
+	<param name="crop_min_y" value="-0.4" />
+	<param name="crop_max_y" value="0.5" />
+	<param name="crop_min_z" value="-1" />
+	<param name="crop_max_z" value="1" />
+	<!-- TODO change map -->
+<!-- 	<arg name="map_file" default="/home/team6/maps/playground.yaml" />
+
+	<include file="$(find fetch_navigation)/launch/fetch_nav.launch">
+		<arg name="map_file" value="$(arg map_file)"/>
+	</include> -->
+
+	<!-- TODO remove rviz -->
+	<!-- <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" /> -->
+
+	<node pkg="recycle" type="add_item_main" name="recycle_item_adder" output="screen" ><remap from="cloud_in" to="mock_point_cloud" /></node>
+</launch>

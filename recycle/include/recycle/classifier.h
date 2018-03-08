@@ -12,8 +12,16 @@
 #include <pcl/conversions.h>
 #include <pcl_ros/transforms.h>
 
-#include "sensor_msgs/PointCloud2.h"
 #include "recycle_msgs/ClassifyAction.h"
+#include "recycle_msgs/LogItem.h"
+#include "sensor_msgs/PointCloud2.h"
+#include "geometry_msgs/PoseStamped.h"
+#include "geometry_msgs/Vector3.h"
+
+#include "recycle/crop.h"
+#include "recycle/downsample.h"
+#include "recycle/object_recognizer.h"
+#include "recycle/segmentation.h"
 
 namespace recycle {
   typedef pcl::PointXYZRGB PointC;

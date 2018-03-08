@@ -18,7 +18,8 @@ MOVE_BASE_ACTION = 'move_base'
 
 class Controller(object):
 
-    LOOK_DOWN_ANGLE = math.pi / 4  # angle to look down at the table
+    # head.look_at(frame_id, x, y, z)
+    LOOK_AT_TABLE = ('base_link', 0.7, 0.0, 0.75)
 
     GRIPPER_BASE_OFFSET = 0.166 - 0.03  # offset between wrist_roll_link and the base of the gripper
     GRIPPER_FINGERTIP_OFFSET = 0.166 + 0.03   # offset between wrist_roll_link and the END of the fingertips
@@ -120,7 +121,7 @@ class Controller(object):
         for category in self.BIN_POSES:
             rospy.logerr('add bin obstacle: {}'.format(category))
             name = category + "_bin"
-            self._planning_scene.attachBox(name, 
+            self._planning_scene.attachBox(name,
                                            self.BIN_WIDTH, self.BIN_WIDTH, self.BIN_WIDTH,
                                            self.BIN_POSES[category]['x'],
                                            self.BIN_POSES[category]['y'],
@@ -165,7 +166,8 @@ class Controller(object):
             if request.action == "bus":
                 # TODO can't move head for some reason..
                 # "Unable to stop head_controller/point_head when trying to start head_controller/follow_joint_trajectory"
-                self._head.pan_tilt(0, self.LOOK_DOWN_ANGLE)  # look down
+                #self._head.pan_tilt(0, self.LOOK_DOWN_ANGLE)  # look down
+                self._head.look_at(*self.LOOK_AT_TABLE)
                 classifier_result = self._classify_pointcloud()
 
                 # add obstacles to PlanningScene for the arm
@@ -342,13 +344,13 @@ class Controller(object):
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
-        self._planning_scene.attachBox(name, 
+        self._planning_scene.attachBox(name,
                                        obj_dim.z, # X dim: gripper's x axis points outwards, down in this case
                                        obj_dim.x, # Y dim: TODO gripper's y axis connects the fingers, so the shortest dim
                                        obj_dim.y, # Z dim: TODO gripper's z axis is perpendicular to the fingers
                                        obj_dim.z/2.0, # X pos
                                        0, 0, # y pos, z pos
-                                       frame_attached_to, 
+                                       frame_attached_to,
                                        touch_links=frames_okay_to_collide_with,
                                        wait=True)
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())

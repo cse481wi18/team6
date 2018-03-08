@@ -152,8 +152,8 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   table->dimensions.x = table_shape.dimensions[1]; // Hacky fix
   table->dimensions.y = table_shape.dimensions[0];
   table->dimensions.z = table_shape.dimensions[2];
-  ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
-  ROS_INFO_STREAM("TABLE POSE " << table_pose);
+  // ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
+  // ROS_INFO_STREAM("TABLE POSE " << table_pose);
 
   obstacles->push_back(*table);
 
@@ -193,7 +193,9 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
 Segmenter::Segmenter(const ros::Publisher& table_cloud_pub,
                       const ObjectRecognizer& recognizer)
     : table_cloud_pub_(table_cloud_pub), 
-    recognizer_(recognizer) {}
+    recognizer_(recognizer) {
+      CONFIDENCE_THRESHOLD = 0.5;
+    }
 
 void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                                    recycle_msgs::ClassifyResult* result) {
@@ -234,7 +236,11 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
       recognizer_.Recognize(object, &name, &confidence);
       confidence = round(1000 * confidence) / 1000;
 
-      result->classifications.push_back(name);
+      if (confidence > CONFIDENCE_THRESHOLD) {
+        result->classifications.push_back(name);
+      } else {
+        result->classifications.push_back("landfill");
+      }
       result->confidence.push_back(confidence);
     }
 }

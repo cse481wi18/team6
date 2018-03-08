@@ -20,7 +20,7 @@ def main():
     # TODO always set torso to max height?? here?
     torso = Torso()
     torso.set_height(0.4)
-    
+
     controller = Controller(move_request_topic, classify_action)
     rospy.on_shutdown(controller.shutdown)
     controller.start()

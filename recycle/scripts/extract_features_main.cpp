@@ -49,9 +49,12 @@ int main(int argc, char** argv) {
   }
   std::string path(argv[1]);
   std::string label(argv[2]);
-
+  std::cout << path << std::endl;
+  std::cout << label << std::endl;
+  // ROS_INFO(path);
+  // ROS_INFO(label);
   rosbag::Bag bag;
-  bag.open(path, rosbag::bagmode::Read);
+  bag.open("/home/team6/data/objects/test_objects/" + path, rosbag::bagmode::Read);
   std::vector<std::string> topics;
   topics.push_back("head_camera/depth_registered/points");
   rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -76,8 +79,16 @@ int main(int argc, char** argv) {
   Crop(pcl_cloud, cropped_cloud);
 
   std::vector<recycle::Object> objects;
+  std::vector<recycle::Object> obstacles;
+  recycle::ObjectRecognizer dummy_recognizer;
+
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-  recycle::SegmentTabletopScene(cropped_cloud, &objects, above_surface_cloud);
+  ros::NodeHandle nh;
+  ros::Publisher table_pub = nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
+
+  recycle::Segmenter segmenter(table_pub, dummy_recognizer);
+  segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud);
+
   if (objects.size() != 1) {
     std::cerr << "Expected to see exactly one object, found " << objects.size()
               << std::endl;
@@ -86,11 +97,11 @@ int main(int argc, char** argv) {
 
   const recycle::Object& object = objects[0];
   recycle_msgs::ObjectFeatures features;
-  features.object_name = label;
+  features.classification = label;
   recycle::ExtractFeatures(object, &features);
 
   rosbag::Bag bag_out;
-  bag_out.open(label + "_label.bag", rosbag::bagmode::Write);
+  bag_out.open("/home/team6/data/objects/test_objects/" + label + "_label.bag", rosbag::bagmode::Write);
   bag_out.write("object_features", ros::Time::now(), features);
   bag_out.close();
 
