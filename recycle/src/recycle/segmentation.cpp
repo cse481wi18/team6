@@ -192,56 +192,99 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
 
 Segmenter::Segmenter(const ros::Publisher& table_cloud_pub,
                       const ObjectRecognizer& recognizer)
-    : table_cloud_pub_(table_cloud_pub), 
+    : ac("recycle/dblog_action", true),
+    table_cloud_pub_(table_cloud_pub),
     recognizer_(recognizer) {
+      ac.waitForServer();
+      ROS_INFO("init done");
       CONFIDENCE_THRESHOLD = 0.5;
     }
+
+Segmenter::Segmenter()
+  : ac("recycle/dblog_action", true) {
+  ac.waitForServer();
+  ROS_INFO("init done");  
+  CONFIDENCE_THRESHOLD = 0.5;
+}
+
+void Segmenter::AddItem(std::string category,
+                        PointCloudC::Ptr cloud_unfiltered, 
+                        recycle_msgs::AddItemResult* result) {
+  PointCloudC::Ptr cloud(new PointCloudC());
+  std::vector<int> index;
+  pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
+
+  std::vector<Object> objects;
+  std::vector<Object> obstacles;
+  PointCloudC::Ptr above_surface_cloud(new PointCloudC);
+  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
+  if (objects.size() != 1) {
+    ROS_INFO_STREAM("Expected to find 1 object. Found " << objects.size());
+  }
+  // for (size_t i = 0; i < objects.size(); ++i) {
+  Object& object = objects[0];
+  object.name = category;
+  // Save and reply to the logger
+  recycle_msgs::ObjectFeatures features;
+  recycle::ExtractFeatures(object, &features);
+  saver_.Log(object, &features, &(result->to_log), false);
+  // }
+}
 
 void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                                    recycle_msgs::ClassifyResult* result) {
 
-    PointCloudC::Ptr cloud(new PointCloudC());
-    std::vector<int> index;
-    pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
+  PointCloudC::Ptr cloud(new PointCloudC());
+  std::vector<int> index;
+  pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
 
-    std::vector<Object> objects;
-    std::vector<Object> obstacles;
-    PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-    Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
+  std::vector<Object> objects;
+  std::vector<Object> obstacles;
+  PointCloudC::Ptr above_surface_cloud(new PointCloudC);
+  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
 
-    result->num_obstacles = obstacles.size();
-    for (size_t i = 0; i < obstacles.size(); ++i) {
-      const Object& obstacle = obstacles[i];  
-      geometry_msgs::PoseStamped poseStamped;
-      poseStamped.header.frame_id = "base_link";
-      poseStamped.pose = obstacle.pose;
-      result->obstacle_poses.push_back(poseStamped);
-      result->obstacle_dimensions.push_back(obstacle.dimensions);
+  result->num_obstacles = obstacles.size();
+  for (size_t i = 0; i < obstacles.size(); ++i) {
+    const Object& obstacle = obstacles[i];  
+    geometry_msgs::PoseStamped poseStamped;
+    poseStamped.header.frame_id = "base_link";
+    poseStamped.pose = obstacle.pose;
+    result->obstacle_poses.push_back(poseStamped);
+    result->obstacle_dimensions.push_back(obstacle.dimensions);
+  }
+
+  result->num_objects = objects.size();
+  ROS_INFO_STREAM("Found " << objects.size() << " objects");
+  for (size_t i = 0; i < objects.size(); ++i) {
+    Object& object = objects[i];  
+    geometry_msgs::PoseStamped poseStamped;
+    poseStamped.header.frame_id = "base_link";
+    poseStamped.pose = object.pose;
+    result->object_poses.push_back(poseStamped);
+    result->object_dimensions.push_back(object.dimensions);
+
+    // Recognize the object.
+    std::string name;
+    double confidence;
+    // TODO: recognize the object with the recognizer_.
+    recognizer_.Recognize(object, &name, &confidence);
+    confidence = round(1000 * confidence) / 1000;
+
+    if (confidence > CONFIDENCE_THRESHOLD) {
+      result->classifications.push_back(name);
+    } else {
+      result->classifications.push_back("landfill");
     }
+    result->confidence.push_back(confidence);
 
-    result->num_objects = objects.size();
-
-    for (size_t i = 0; i < objects.size(); ++i) {
-      const Object& object = objects[i];  
-      geometry_msgs::PoseStamped poseStamped;
-      poseStamped.header.frame_id = "base_link";
-      poseStamped.pose = object.pose;
-      result->object_poses.push_back(poseStamped);
-      result->object_dimensions.push_back(object.dimensions);
-
-      // Recognize the object.
-      std::string name;
-      double confidence;
-      // TODO: recognize the object with the recognizer_.
-      recognizer_.Recognize(object, &name, &confidence);
-      confidence = round(1000 * confidence) / 1000;
-
-      if (confidence > CONFIDENCE_THRESHOLD) {
-        result->classifications.push_back(name);
-      } else {
-        result->classifications.push_back("landfill");
-      }
-      result->confidence.push_back(confidence);
-    }
+    // Save and reply to the logger
+    recycle_msgs::ObjectFeatures features;
+    recycle::ExtractFeatures(object, &features);
+    recycle_msgs::LogItem item;
+    saver_.Log(object, &features, &item, true);
+    recycle_msgs::DbLogGoal goal;
+    goal.log_item = item;
+    ac.sendGoal(goal);
+  }
 }
 }  // namespace recycle

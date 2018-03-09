@@ -4,21 +4,9 @@
 #include <ros/console.h>
 
 int main(int argc, char** argv) {
-  // if (argc < 2) {
-  //   ROS_INFO("Usage: rosrun perception point_cloud_demo DATA_DIR");
-  //   ros::spinOnce();
-  // }
-  // std::string data_dir(argv[1]);
-
-  ros::init(argc, argv, "point_cloud_demo");
+  ros::init(argc, argv, "classifier");
   ros::NodeHandle nh;
-
-  // Cropper
-  // ros::Publisher crop_pub =
-  //     nh.advertise<sensor_msgs::PointCloud2>("cropped_cloud", 1, true);
-  recycle::Classifier classifier("recycle_classifier/classify");
-  // ros::Subscriber point_cloud_sub =
-  //     nh.subscribe("cloud_in", 1, &recycle::Classifier::PointCloudCallback, &point_cloud_sub);
+  recycle::Classifier classifier("recycle_classifier/classify", "recycle_classifier/add_item");
 
   ros::spin();
   return 0;

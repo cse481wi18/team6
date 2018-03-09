@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   // ROS_INFO(path);
   // ROS_INFO(label);
   rosbag::Bag bag;
-  bag.open("/home/team6/data/objects/test_objects/" + path, rosbag::bagmode::Read);
+  bag.open("/home/team6/data/demo_objects/" + path, rosbag::bagmode::Read);
   std::vector<std::string> topics;
   topics.push_back("head_camera/depth_registered/points");
   rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -92,6 +92,11 @@ int main(int argc, char** argv) {
   if (objects.size() != 1) {
     std::cerr << "Expected to see exactly one object, found " << objects.size()
               << std::endl;
+    // for (int i = 0; i < objects.size(); i++) {
+    //   std::cerr << "Object " << i << " " << objects[0].dimensions
+    //             << std::endl;
+      
+    // }
     return 1;
   }
 
@@ -101,7 +106,7 @@ int main(int argc, char** argv) {
   recycle::ExtractFeatures(object, &features);
 
   rosbag::Bag bag_out;
-  bag_out.open("/home/team6/data/objects/test_objects/" + label + "_label.bag", rosbag::bagmode::Write);
+  bag_out.open("/home/team6/data/demo_objects/" + label + "_label.bag", rosbag::bagmode::Write);
   bag_out.write("object_features", ros::Time::now(), features);
   bag_out.close();
 

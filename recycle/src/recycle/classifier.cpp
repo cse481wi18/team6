@@ -1,62 +1,66 @@
 #include "recycle/classifier.h"
-// #include "recycle/saver.h"
 
 namespace recycle {
-  Classifier::Classifier(std::string name) :
-    as_(nh_, name, boost::bind(&Classifier::ActionCallback, this, _1), false),
-    action_name_(name) {
-      as_.start();
-  }
+  Classifier::Classifier(std::string classify_name,
+      std::string add_item_name) :
+    classifier_as_(nh_, classify_name, boost::bind(&Classifier::ClassifierActionCallback, this, _1), false),
+    add_item_as_(nh_, add_item_name, boost::bind(&Classifier::AddItemActionCallback, this, _1), false),
+    classifier_action_name_(classify_name),
+    add_item_action_name_(add_item_name) {
+      classifier_as_.start();
+      add_item_as_.start();
+    }
 
-  void Classifier::ActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
+  void Classifier::ClassifierActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
     recycle_msgs::ClassifyResult result;
 
-    ROS_INFO("WAITING FOR MESSAGE");
+    ROS_INFO("CLASSIFYING");
     
     sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
     
-    ROS_INFO("RECEIVED MESSAGE");
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
-    ROS_INFO("TRYING TO CROP");
-    
     Cropper cropper;
     PointCloudC::Ptr cropped = cropper.Crop(cloud);
-    
-    ROS_INFO("CROPPED SUCCESSFULLY");
-
-    ROS_INFO("TRYING TO DOWNSAMPLE");
     Downsampler downsampler;
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
-    ROS_INFO("DOWNSAMPLED SUCCESSFULLY");
 
-    ROS_INFO("OBJECT RECOGNIZER");
-    // TODO: LOAD DATA FROM DATABASE
     recycle::ObjectRecognizer recognizer;
+    // TODO: CHANGE THE DATABASE
     recognizer.LoadData("/home/team6/catkin_ws/src/cse481wi18/database/temp.db");
-    ROS_INFO("LOADED DATASET");
 
-    ROS_INFO("SEGMENGTING");
     ros::NodeHandle nh;
     ros::Publisher table_pub =
       nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
-    ros::Publisher logging_pub =
-      nh.advertise<sensor_msgs::PointCloud2>("recycle/logger", 1, true);
-    
+    ROS_INFO("Segmenting");
     recycle::Segmenter segmenter(table_pub, recognizer);
     segmenter.SegmentAndClassify(downsampled, &result);
-    ROS_INFO("SEGMENTED");
+    classifier_as_.setSucceeded(result);
+    ROS_INFO("REPLIED");
+  } 
 
-    ROS_INFO("TALKING TO LOGGER");
-    for (int i = 0; i < result.num_objects; i++) {
-        recycle_msgs::LogItem item;
-        item.predicted_category = result.classifications[i];
-        ROS_INFO_STREAM("ITEM IS A " << result.classifications[i]);
-    }
+  void Classifier::AddItemActionCallback(const recycle_msgs::AddItemGoalConstPtr &goal)  {
+    //Create result message
+    recycle_msgs::AddItemResult result;
+    ROS_INFO("ADDING ITEM");
+    
+    sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
+    PointCloudC::Ptr cloud(new PointCloudC());
+    pcl::fromROSMsg(* msg, *cloud);
+
+    Cropper cropper;
+    PointCloudC::Ptr cropped = cropper.Crop(cloud);
+    Downsampler downsampler;
+    PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
+
+    ros::NodeHandle nh;
+
+    recycle::Segmenter segmenter;
+    segmenter.AddItem(goal->category, downsampled, &result);
 
     ROS_INFO("REPLYING TO CLIENT");
-    as_.setSucceeded(result);
+    add_item_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
   } 
 }

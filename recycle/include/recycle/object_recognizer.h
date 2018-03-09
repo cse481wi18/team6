@@ -20,7 +20,7 @@ namespace recycle {
 	 	public:
 
 	  	explicit ObjectRecognizer();
-	  	void Recognize(const Object& object, std::string* name, double* confidence);
+	  	void Recognize(Object& object, std::string* name, double* confidence);
 		int LoadData(const std::string& database_path);
 
 	 	private:

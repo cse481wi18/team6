@@ -156,8 +156,8 @@ include_directories(
 #   src/${PROJECT_NAME}/recycle.cpp
 # )
 add_library(recycle_classifier src/recycle/classifier.cpp)
-add_library(recycle_item_adder src/recycle/item_adder.cpp)
-#add_library(recycle_saver src/recycle/saver.cpp)
+# add_library(recycle_item_adder src/recycle/item_adder.cpp)
+add_library(recycle_saver src/recycle/saver.cpp)
 add_library(recycle_crop src/recycle/crop.cpp)
 add_library(recycle_downsample src/recycle/downsample.cpp)
 add_library(recycle_feature_extraction src/recycle/feature_extraction.cpp)
@@ -171,20 +171,21 @@ add_library(recycle_box_fitter src/recycle/box_fitter.cpp)
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_classifier ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(recycle_item_adder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(recycle_item_adder ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_crop ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_downsample ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_feature_extraction ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_object_recognizer ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_segmentation ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_box_fitter ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-#add_dependencies(recycle_saver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(recycle_saver ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/recycle_node.cpp)
 add_executable(recycle_classifier_main scripts/classifier_main.cpp)
-add_executable(recycle_add_item_main scripts/add_item_main.cpp)
+# add_executable(recycle_add_item_main scripts/add_item_main.cpp)
 add_executable(recycle_extract_features_main scripts/extract_features_main.cpp)
 
 
@@ -194,14 +195,14 @@ add_executable(recycle_extract_features_main scripts/extract_features_main.cpp)
 ## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
 # set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
 set_target_properties(recycle_classifier_main PROPERTIES OUTPUT_NAME classifier_main PREFIX "")
-set_target_properties(recycle_add_item_main PROPERTIES OUTPUT_NAME add_item_main PREFIX "")
+# set_target_properties(recycle_add_item_main PROPERTIES OUTPUT_NAME add_item_main PREFIX "")
 set_target_properties(recycle_extract_features_main PROPERTIES OUTPUT_NAME extract_features_main PREFIX "")
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_classifier_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(recycle_add_item_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(recycle_add_item_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(recycle_extract_features_main ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
@@ -213,11 +214,11 @@ target_link_libraries(recycle_classifier_main
    ${PCL_LIBRARIES}
    recycle_classifier
 )
-target_link_libraries(recycle_add_item_main
-   ${catkin_LIBRARIES}
-   ${PCL_LIBRARIES}
-   recycle_item_adder
-)
+# target_link_libraries(recycle_add_item_main
+#    ${catkin_LIBRARIES}
+#    ${PCL_LIBRARIES}
+#    recycle_item_adder
+# )
 target_link_libraries(recycle_extract_features_main
   recycle_feature_extraction
   recycle_segmentation
@@ -230,17 +231,17 @@ target_link_libraries(recycle_classifier
    recycle_crop
    recycle_downsample
    recycle_object_recognizer
-   #recycle_saver
+   recycle_saver
    recycle_segmentation
 )
-target_link_libraries(recycle_item_adder
-   ${catkin_LIBRARIES}
-   ${PCL_LIBRARIES}
-   recycle_crop
-   recycle_downsample
-   recycle_object_recognizer
-   recycle_segmentation
-)
+# target_link_libraries(recycle_item_adder
+#    ${catkin_LIBRARIES}
+#    ${PCL_LIBRARIES}
+#    recycle_crop
+#    recycle_downsample
+#    recycle_object_recognizer
+#    recycle_segmentation
+# )
 target_link_libraries(recycle_crop
    ${catkin_LIBRARIES}
    ${PCL_LIBRARIES}
@@ -259,10 +260,13 @@ target_link_libraries(recycle_box_fitter ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(recycle_segmentation
   recycle_box_fitter
   recycle_object_recognizer
+  recycle_feature_extraction
+  recycle_saver
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES})
+target_link_libraries(recycle_saver
+  ${PCL_LIBRARIES}
   ${catkin_LIBRARIES})
-# target_link_libraries(recycle_saver
-#   ${PCL_LIBRARIES}
-#   ${catkin_LIBRARIES})
 
 #############
 ## Install ##

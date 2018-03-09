@@ -1,4 +1,5 @@
 #include <vector>
+#include <actionlib/client/simple_action_client.h>
 
 #include "recycle/object.h"
 #include "pcl/PointIndices.h"
@@ -12,6 +13,11 @@
 #include "pcl/ModelCoefficients.h"
 #include "recycle/object_recognizer.h"
 #include "recycle_msgs/ClassifyAction.h"
+#include "recycle_msgs/AddItemAction.h"
+#include "recycle_msgs/DbLogAction.h"
+#include "recycle_msgs/LogItem.h"
+#include "recycle/saver.h"
+#include "recycle/feature_extraction.h"
 
 namespace recycle {
 typedef pcl::PointXYZRGB PointC;
@@ -21,6 +27,8 @@ class Segmenter {
  public:
   Segmenter(const ros::Publisher& table_cloud_pub,
             const ObjectRecognizer& recognizer);
+
+  Segmenter();
   
   // Does a complete tabletop segmentation pipeline.
   //
@@ -35,8 +43,14 @@ class Segmenter {
 
   void SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                           recycle_msgs::ClassifyResult* result);
+  void AddItem(std::string category, 
+              PointCloudC::Ptr cloud_unfiltered, 
+              recycle_msgs::AddItemResult* result);
 
  private:
+  actionlib::SimpleActionClient<recycle_msgs::DbLogAction> ac;
+  // ros::Publisher logger_pub_;
+  recycle::Saver saver_;
   ros::Publisher table_cloud_pub_;
   ObjectRecognizer recognizer_;
   int CONFIDENCE_THRESHOLD;

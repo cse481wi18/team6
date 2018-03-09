@@ -13,7 +13,7 @@
 #include <pcl_ros/transforms.h>
 
 #include "recycle_msgs/ClassifyAction.h"
-#include "recycle_msgs/LogItem.h"
+#include "recycle_msgs/AddItemAction.h"
 #include "sensor_msgs/PointCloud2.h"
 #include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/Vector3.h"
@@ -29,15 +29,16 @@ namespace recycle {
   
   class Classifier {
     public:
-     explicit Classifier(std::string name);  
-     void ActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal);
-     // void PointCloudCallback(const sensor_msgs::PointCloud2& msg);
+     explicit Classifier(std::string classify_name, std::string add_item_name);  
 
     private:
       ros::NodeHandle nh_;
-      actionlib::SimpleActionServer<recycle_msgs::ClassifyAction> as_; // NodeHandle instance must be created before this line. Otherwise strange error occurs.
-      std::string action_name_;
-      // sensor_msgs::PointCloud2* pcloud_;
+      actionlib::SimpleActionServer<recycle_msgs::ClassifyAction> classifier_as_;
+      actionlib::SimpleActionServer<recycle_msgs::AddItemAction> add_item_as_;
+      std::string classifier_action_name_;
+      std::string add_item_action_name_;
+      void ClassifierActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal);
+      void AddItemActionCallback(const recycle_msgs::AddItemGoalConstPtr &goal);
   };
 }
 

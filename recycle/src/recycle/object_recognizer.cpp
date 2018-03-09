@@ -47,7 +47,7 @@ int SQLCallback(void *data, int argc, char **argv, char **azColName) {
   std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
   // ROS_INFO_STREAM("INSIDE CALLBACK ADDRESS: " << dataset_point);
   std::string type = argv[0];
-  ROS_INFO_STREAM("FILEPATH IS " << argv[1]);
+  ROS_INFO_STREAM("Loading " << argv[1]);
   rosbag::Bag bag;
   bag.open(argv[1], rosbag::bagmode::Read);
   std::vector<std::string> topics;
@@ -58,19 +58,19 @@ int SQLCallback(void *data, int argc, char **argv, char **azColName) {
     ObjectFeatures::Ptr fp = it->instantiate<ObjectFeatures>();
     if (fp != NULL) {
       // ROS_INFO_STREAM("ITEM HAS THE DATA " << fp->names[0]);
-      ROS_INFO_STREAM("Original type is " << fp->classification);
+      // ROS_INFO_STREAM("Original type is " << fp->classification);
       fp->classification = type;
-      ROS_INFO_STREAM("New type is " << fp->classification);
+      // ROS_INFO_STREAM("New type is " << fp->classification);
       dataset_point->push_back(*fp);
     }
   }
-  ROS_INFO_STREAM("SIZE NOW " << dataset_point->size());
+  // ROS_INFO_STREAM("SIZE NOW " << dataset_point->size());
   bag.close();
   return 0;
 }
 
 int ObjectRecognizer::LoadData(const std::string& database_path) {
-  ROS_INFO_STREAM("OUTSIDE ADDRESS: " << &dataset_);
+  // ROS_INFO_STREAM("OUTSIDE ADDRESS: " << &dataset_);
 
   sqlite3 *db;
   char *zErrMsg = 0;
@@ -84,7 +84,6 @@ int ObjectRecognizer::LoadData(const std::string& database_path) {
   }
 
   std::string statement = "SELECT predicted_category, feature_file_path from classification_log";
-  // const char* data = "Callback function called";
   
   rc = sqlite3_exec(db, statement.c_str(), SQLCallback, static_cast<void*>(&dataset_), &zErrMsg);
 
@@ -102,7 +101,7 @@ int ObjectRecognizer::LoadData(const std::string& database_path) {
 
 ObjectRecognizer::ObjectRecognizer() {}
 
-void ObjectRecognizer::Recognize(const Object& object, std::string* name,
+void ObjectRecognizer::Recognize(Object& object, std::string* name,
                                  double* confidence) {
   // TODO: extract features from the object
   recycle_msgs::ObjectFeatures features;
@@ -121,6 +120,7 @@ void ObjectRecognizer::Recognize(const Object& object, std::string* name,
       second_min_distance = min_distance;
       min_distance = distance;
       *name = dataset_[i].classification;
+      object.name = dataset_[i].classification;
     } else if (distance < second_min_distance) {
       second_min_distance = distance;
     }
@@ -128,6 +128,7 @@ void ObjectRecognizer::Recognize(const Object& object, std::string* name,
 
   // Confidence is based on the distance to the two nearest results.
   *confidence = 1 - min_distance / (min_distance + second_min_distance);
+  object.confidence = *confidence;
 }
 
 }  // namespace recycle

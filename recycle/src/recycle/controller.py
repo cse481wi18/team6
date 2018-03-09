@@ -43,7 +43,7 @@ class Controller(object):
 
     # The center of the top of the bins in base_link frame.
     # Right to left (for Astro): compost, landfill, recycle
-    DROPOFF_X_PADDING = 0.0#0.1
+    DROPOFF_X_PADDING = 0.1
     DROPOFF_Z_PADDING = 0.0
     BIN_WIDTH = 0.153
     BIN_POSES = {
