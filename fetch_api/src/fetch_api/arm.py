@@ -171,7 +171,7 @@ class Arm(object):
     def move_to_pose(self,
                      pose_stamped,
                      allowed_planning_time=1.0,
-                     execution_timeout=15.0,
+                     execution_timeout=30.0,
                      group_name='arm',
                      num_planning_attempts=30,
                      orientation_constraint=None,

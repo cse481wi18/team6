@@ -7,7 +7,7 @@ import fetch_api
 import rospy
 from moveit_python import PlanningSceneInterface
 
-from geometry_msgs.msg import Pose, PoseStamped, Quaternion
+from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from moveit_msgs.msg import OrientationConstraint
 from recycle_msgs.msg import ActionPose
@@ -21,6 +21,7 @@ class Controller(object):
     # head.look_at(frame_id, x, y, z)
     LOOK_AT_TABLE = ('base_link', 0.7, 0.0, 0.75)
 
+    GRIPPER_WIDTH = 0.10
     GRIPPER_BASE_OFFSET = 0.166 - 0.03  # offset between wrist_roll_link and the base of the gripper
     GRIPPER_FINGERTIP_OFFSET = 0.166 + 0.03   # offset between wrist_roll_link and the END of the fingertips
 
@@ -42,7 +43,7 @@ class Controller(object):
 
     # The center of the top of the bins in base_link frame.
     # Right to left (for Astro): compost, landfill, recycle
-    DROPOFF_X_PADDING = 0.1
+    DROPOFF_X_PADDING = 0.0#0.1
     DROPOFF_Z_PADDING = 0.0
     BIN_WIDTH = 0.153
     BIN_POSES = {
@@ -91,7 +92,6 @@ class Controller(object):
 
         ########### FOR DEBUGGING ##################
         self._marker_pub = rospy.Publisher('recycle/object_markers', Marker, queue_size=10)
-        self._cat_i = 0 # TODO remove
 
         rospy.loginfo("Done init")
 
@@ -136,7 +136,7 @@ class Controller(object):
         rospy.loginfo("New move request queued. Queue size: {}.".format(len(self._request_queue)))
 
 
-    def shutdown():
+    def shutdown(self):
         self._arm.cancel_all_goals()
 
         for category in self.BIN_POSES:
@@ -232,26 +232,24 @@ class Controller(object):
     def _bus_objects(self, classifier_result):
         rospy.loginfo("Start bussing objects...")
 
-        cats = ['compost', 'landfill', 'recycle']  # TODO remove
 
         for i in range(classifier_result.num_objects):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
             category = classifier_result.classifications[i]
-
-            # TODO remove
-            category = cats[self._cat_i]
-            self._cat_i = (self._cat_i + 1) % 3
-
             bin_pose = self.BIN_POSES[category]
 
             # DEBUG
             # self._pub_bin_markers()
             self._pub_object_marker(i, category, obj_posestamped.pose, obj_dim)
 
-            self._pickup_object(obj_posestamped, obj_dim, bin_pose)
+            pickedup = self._pickup_object(obj_posestamped, obj_dim, bin_pose)
+            if pickedup:
+                rospy.loginfo("Picked up object {}: {}".format(i, category))
+            else:
+                rospy.logwarn("Failed to pick up object {}, moving on".format(i))
+            self._print_move_summary()
 
-            rospy.loginfo("Done with object {}: {}".format(i, category))
 
         # TODO put arm back to 'home position'
         # TODO remove table obstacle
@@ -260,10 +258,6 @@ class Controller(object):
     # Given the target object's pose and dimension, and the target
     # bin's pose, pick up object and drop in the bin.
     def _pickup_object(self, obj_posestamped, obj_dim, bin_pose):
-        # TODO handle planning failures
-        # if planning failed at any given time, give up dont continue for
-        # this object, and move on to next object
-
         gripper_goal = copy.deepcopy(obj_posestamped)
         gripper_goal.pose.orientation = self.CRANE_ORIENTATION
         obj_top_z = obj_posestamped.pose.position.z + obj_dim.z / 2.0
@@ -276,30 +270,47 @@ class Controller(object):
         gripper_goal.pose.position.z = (obj_top_z
                                         + self.GRIPPER_FINGERTIP_OFFSET
                                         + self.PRE_GRASP_DIST)
-        self._arm_move_to_pose_attempt(gripper_goal, "pre grasp")
+        if not self._arm_move_to_pose_attempt(gripper_goal, "pre grasp"):
+            # if we can't get to the pre grasp pose, move on
+            return False
 
-        # 2. TODO: align gripper with shortest x or y orientation
-        # modify gripper_goal.pose.orientation
-        # if x dim is smallest (in base_link), dont need to rotate
-        # if y dim is smallest (in base_link), rotate wrist
+        # 2. Align gripper with shortest x or y orientation
+        # if x dim is smallest (in base_link), rotate wrist
+        # if y dim is smallest (in base_link), no need to rotate
         rospy.logerr("X_DIM={}, Y_DIM={}".format(obj_dim.x, obj_dim.y))
-        if obj_dim.y < obj_dim.x:
-            gripper_goal.pose.orientation = self.Y_ALIGN_ORIENTATION
-            self._arm_move_to_pose_attempt(gripper_goal, "rotate")
+        rotated = False
+        if obj_dim.y > self.GRIPPER_WIDTH:
+            if obj_dim.x < obj_dim.y:
+                gripper_goal.pose.orientation = self.Y_ALIGN_ORIENTATION
+                if self._arm_move_to_pose_attempt(gripper_goal, "rotate"):
+                    rotated = True
+                else:
+                    # if we can't rotate to the shortest dim, we can't pick up the object, move on
+                    return False
+            else:
+                rospy.logwarn("object is too big to grip!")
+                return False
 
         # 3. Move down to grasp pose:
         # max-z(gripper base X cm above the object, fingertip Ycm above table)
         gripper_goal.pose.position.z = max(obj_top_z + self.GRIPPER_BASE_OFFSET + self.GRASP_DIST,
                                            obj_bottom_z + self.GRIPPER_FINGERTIP_OFFSET + self.TABLE_DIST)
-        self._arm_move_to_pose_attempt(gripper_goal, "grasp")
+        if not self._arm_move_to_pose_attempt(gripper_goal, "grasp"):
+            # if we can't get to grasp pose, move on
+            return False
+
+        grasp_pose = copy.deepcopy(gripper_goal.pose)
 
         # 4. Grip object and attach as obstacle
         self._gripper.close()
-        self._attach_object_obstacle(obj_dim)
+        self._attach_object_obstacle(obj_dim, rotated=rotated)
 
         # 5. Move up to post-grasp pose: Xcm back up
         gripper_goal.pose.position.z += self.POST_GRASP_DIST
-        self._arm_move_to_pose_attempt(gripper_goal, "post grasp")
+        if not self._arm_move_to_pose_attempt(gripper_goal, "post grasp"):
+            # if we cant get to post grasp, drop the object and move on
+            self._drop_object()
+            return False
 
         # 6. Move to bin dropoff pose: fingertip obj-height above bin pose
         gripper_goal.pose.position.x = bin_pose['x'] + self.DROPOFF_X_PADDING
@@ -308,51 +319,83 @@ class Controller(object):
                                         + self.GRIPPER_FINGERTIP_OFFSET
                                         + obj_dim.z
                                         + self.DROPOFF_Z_PADDING)
-        self._arm_move_to_pose_attempt(gripper_goal, "bin")
+        if not self._arm_move_to_pose_attempt(gripper_goal, "bin"):
+            # if we can't move to the bin, try to set the obj back down
+            gripper_goal.pose = grasp_pose
+            gripper_goal.pose.position.z += 0.008 # just to leave some room for collision
+            # TODO can't go back down
+            if not self._arm_move_to_pose_attempt(gripper_goal, "bin fail, dropoff"):
+                rospy.logerr("Could not put object back down, going to drop it anyway! :O")
+            
+            self._drop_object()
+            return False
 
         # 7. Drop object and detach obstacle
-        self._gripper.open()
-        self._detach_object_obstacle()
+        self._drop_object()
 
         # DEBUG
         # rospy.loginfo("obj_posestamped: {}".format(obj_posestamped))
         # rospy.loginfo("obj_dim: {}".format(obj_dim))
-        self._print_move_summary()
+
+        return True
+
+    def _drop_object(self):
+        self._gripper.open()
+        self._detach_object_obstacle()
 
 
+    # return True if succeeded, False otherwise
     def _arm_move_to_pose_attempt(self, goal, action_label):
+        succeeded = False
         for i in range(self.NUM_ARM_ATTEMPTS):
             r = self._arm.move_to_pose(goal)
             rospy.loginfo(action_label + " try{}: {}".format(i, r))
             if r is None:
+                succeeded = True
                 break
         # give robot's arm time to settle down
         rospy.sleep(1)
 
         self._move_summary.append({'label': action_label, 'num_tried': i+1, 'result': r})
-        return r
+        return succeeded
 
 
-    def _attach_object_obstacle(self, obj_dim):
+    def _attach_object_obstacle(self, obj_dim, rotated=False):
         rospy.logerr("ATTACH")
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
         rospy.logerr(self._planning_scene.getKnownCollisionObjects())
+
         name = 'object_{}'.format(self._attached_i)
         self._planning_scene.removeAttachedObject(name, wait=True)
+
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
         rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
+        attach_dim = Vector3()
+        attach_dim.x = obj_dim.z  # gripper's x axis points outwards, down in this case
+        # gripper's y axis connects the fingers, so the shortest dim
+        # gripper's z axis is perpendicular to the fingers
+        if rotated:
+            # object's x dim was the shortest
+            attach_dim.y = obj_dim.x
+            attach_dim.z = obj_dim.y
+        else:
+            # object's y dim was the shortest
+            attach_dim.y = obj_dim.y
+            attach_dim.z = obj_dim.x
+
         self._planning_scene.attachBox(name,
-                                       obj_dim.z, # X dim: gripper's x axis points outwards, down in this case
-                                       obj_dim.x, # Y dim: TODO gripper's y axis connects the fingers, so the shortest dim
-                                       obj_dim.y, # Z dim: TODO gripper's z axis is perpendicular to the fingers
+                                       attach_dim.x,
+                                       attach_dim.y,
+                                       attach_dim.z,
                                        obj_dim.z/2.0, # X pos
                                        0, 0, # y pos, z pos
                                        frame_attached_to,
                                        touch_links=frames_okay_to_collide_with,
                                        wait=True)
+
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
         rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
@@ -372,6 +415,7 @@ class Controller(object):
 
     ################ FOR DEBUGGING ################
     def _print_move_summary(self):
+        rospy.loginfo('Move Summary:')
         for entry in self._move_summary:
             rospy.loginfo(entry['label'] + ": num_tried={}, res={}".format(entry['num_tried'], entry['result']))
         self._move_summary = []
