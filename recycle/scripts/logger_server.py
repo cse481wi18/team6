@@ -32,9 +32,13 @@ class LogServer:
             c.execute('''
                 UPDATE classification_log
                 SET predicted_category = ?,
-                    actual_category = ?
+                    actual_category = ?,
+                    image_file_path = ?,
+                    pointcloud_file_path = ?,
+                    feature_file_path = ?
                 WHERE log_id = ?''',
-                (log_item.predicted_category, log_item.actual_category, log_item.log_id))
+                (log_item.predicted_category, log_item.actual_category, log_item.image_file_path,
+                    log_item.pointcloud_file_path, log_item.feature_file_path, log_item.log_id))
         else:
             # new item
             rospy.logerr('inserting new record')

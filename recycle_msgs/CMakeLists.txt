@@ -71,8 +71,9 @@ add_message_files(
 add_action_files(
   DIRECTORY action
   FILES
-  Classify.action
   AddItem.action
+  Classify.action
+  DbLog.action
 )
 
 ## Generate added messages and services with any dependencies listed here

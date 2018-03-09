@@ -49,10 +49,10 @@ class AddItemServer:
         self._add_item_client.send_goal(goal)
         self._add_item_client.wait_for_result()
         result = self._add_item_client.get_result()
-        self._log_item = result.log_item
+        self._log_item = result.to_log
 
         # publish pointcloud
-        cloud = self._camera.read_cloud(result.log_item.pointcloud_file_path)
+        cloud = self._camera.read_cloud(result.to_log.pointcloud_file_path)
         self._pointcloud_pub.publish(cloud)
 
         # send back result for confirmation

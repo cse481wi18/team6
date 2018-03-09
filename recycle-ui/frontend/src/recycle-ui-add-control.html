@@ -173,7 +173,7 @@
       _handleRecord(evt) {
         console.log('Sending', this.$.dropdown.selectedItemLabel);
         var goal = {
-          category: this.$.dropdown.selectedItemLabel
+          category: this.$.dropdown.selectedItemLabel.toLowerCase()
         };
         this.$.addClient.send(goal);
       }

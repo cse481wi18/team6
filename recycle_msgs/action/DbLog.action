@@ -1,0 +1,7 @@
+#goal definition
+LogItem log_item
+---
+#result definition
+bool added 
+---
+#feedback
