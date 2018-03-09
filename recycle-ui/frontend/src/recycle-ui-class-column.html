@@ -1,7 +1,9 @@
 <link rel="import" href="../bower_components/polymer/polymer-element.html">
 
-<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
+<link rel="import" href="../bower_components/ros-action-client/ros-action-client.html">
 <link rel="import" href="../bower_components/ros-topic/ros-topic.html">
+<link rel="import" href="../bower_components/ros-websocket/ros-websocket.html">
+
 
 <link rel="import" href="recycle-ui-class-card.html">
 
@@ -43,6 +45,14 @@
       last-message="{{items}}"
       on-message="_handleResponse">
     </ros-topic>
+
+    <ros-action-client  ros="{{ros}}"
+      id="correctionClient"
+      server="/recycle/dblog_action"
+      action-type="recycle_msgs/DbLogAction"
+      last-result="{{lastResult}}"
+      on-result="_handleCorrectionResult">
+    </ros-action-client>
 
     <div>
       <h3>[[title]]</h3>
@@ -119,8 +129,33 @@
       }
 
       _correctItem(evt) {
-        // TODO: send event to server
-        console.log('Clicked', evt.detail.correctLabel);
+        // modify the log item to have the corrected label
+        console.log('Correcting item:', evt.detail);
+        evt.detail.item.actual_category = evt.detail.correctLabel;
+        var goal = {
+          log_item: evt.detail.item
+        };
+
+        // find smallest id and ask for one before that to refresh
+        var logItems = this.items.log_items;
+        var smallestId = logItems[0].log_id;
+        for (var i = 1; i < logItems.length; i++) {
+          if (logItems[i].log_id < smallestId) {
+            smallestId = logItems[i].log_id;
+          }
+        }
+
+        // hack to make sure we get the first item again
+        this.lastId = smallestId - 1;
+        console.log('new lastId', this.lastId);
+
+        // important to send this after we update the field
+        this.$.correctionClient.send(goal);
+      }
+
+      _handleCorrectionResult(evt) {
+        console.log('Correction: received', evt.detail);
+        this._nextItems();
       }
 
       _handleResponse(evt) {

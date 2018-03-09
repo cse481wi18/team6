@@ -51,6 +51,7 @@ class ClassificationServer():
                   pointcloud_file_path
             FROM classification_log
             WHERE predicted_category=?
+            AND actual_category IS NULL
             AND {}
             ORDER BY log_id {}
             LIMIT ?'''.format(log_id_inequality, sort_direction),
