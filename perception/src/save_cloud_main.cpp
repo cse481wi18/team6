@@ -52,7 +52,6 @@ int main(int argc, char** argv) {
   bag.write("head_camera/depth_registered/points", ros::Time::now(), cloud_out);
   bag.close();
 
-return 0;
-
   return 0;
+
 }

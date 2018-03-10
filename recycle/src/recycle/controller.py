@@ -157,11 +157,10 @@ class Controller(object):
             rospy.loginfo("Num requests left in q: {}".format(len(self._request_queue)))
 
             # navigate to target pose
-            # TODO: Uncomment this
-            # goal = MoveBaseGoal()
-            # goal.target_pose = request.target_pose
-            # self._move_base_client.send_goal(goal)
-            # self._move_base_client.wait_for_result()
+            goal = MoveBaseGoal()
+            goal.target_pose = request.target_pose
+            self._move_base_client.send_goal(goal)
+            self._move_base_client.wait_for_result()
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
@@ -178,7 +177,7 @@ class Controller(object):
                 # now, bus the classified objects
                 self._bus_objects(classifier_result)
 
-            elif request.action == "home":
+            elif request.action == "rest":
                 pass
 
             else:
@@ -274,15 +273,11 @@ class Controller(object):
         # else:
         #     # y unit vector [0,1,0,1]
         #     unit_in_obj[1] = 1
-
         # #   b. Rotate unit vector to be in F_baselink without translation
         # unit_in_base = utils.unit_in_base(unit_in_obj, obj_posestamped)
-
         # #   c. Compute theta: arctan2(x'/y') -> [-pi, pi]
         # theta = np.arctan2(unit_in_base[0], unit_in_base[1])
-
         # rospy.logerr("theta: {}".format(theta))
-
         # #   d. Rotate gripper theta degrees about Z_baselink axis
         # aligned_orien = utils.rotate_quaternion_by_angle(gripper_goal.pose.orientation, theta)
         # gripper_goal.pose.orientation = aligned_orien
@@ -359,7 +354,6 @@ class Controller(object):
             # if we can't move to the bin, try to set the obj back down
             gripper_goal.pose = grasp_pose
             gripper_goal.pose.position.z += 0.01 # just to leave some room for collision
-            # TODO can't go back down
             if not self._arm_move_to_pose_attempt(gripper_goal, "bin fail, dropoff"):
                 rospy.logerr("Could not put object back down, going to drop it anyway! :O")
 

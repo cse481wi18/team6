@@ -180,6 +180,7 @@ class GripperTeleop(object):
         elif event_type == InteractiveMarkerFeedback.POSE_UPDATE:
             self._gripper_im.pose = pose_stamped.pose
             if self._arm.compute_ik(pose_stamped):
+                rospy.loginfo('{}'.format(pose_stamped))
                 _change_colour(self._gripper_im, 0, 'green')
             else:
                 _change_colour(self._gripper_im, 0, 'red')

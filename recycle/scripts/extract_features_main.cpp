@@ -83,14 +83,11 @@ int main(int argc, char** argv) {
   recycle::ObjectRecognizer dummy_recognizer;
 
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-  ros::NodeHandle nh;
-  ros::Publisher table_pub = nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
-
-  recycle::Segmenter segmenter(table_pub, dummy_recognizer);
+  recycle::Segmenter segmenter(dummy_recognizer);
   segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud);
 
   if (objects.size() != 1) {
-    std::cerr << "Expected to see exactly one object, found " << objects.size()
+    std::cerr << path << " Expected to see exactly one object, found " << objects.size()
               << std::endl;
     // for (int i = 0; i < objects.size(); i++) {
     //   std::cerr << "Object " << i << " " << objects[0].dimensions

@@ -6,6 +6,19 @@ Labs and other documentation are on the **[wiki](https://github.com/cse481wi18/c
 
 # Startup Instructions
 ## General
+Libraries
+* `roslaunch recycle navigation.launch`
+* `roslaunch fetch_api move_group.launch`
+
+Recycle Backend
+* `rosrun recycle logger_server.launch` (`<node>`)
+* `roslaunch recycle classifier.launch`
+* `roslaunch recycle controller.launch`
+
+Recycle UI
+* `roslaunch recycle_ui classification_server.launch`
+* `project && cd recycle-ui/frontend && polymer serve -H 0.0.0.0`
+
 
 ## Frontend
 Requires: navigation launch and the ActionLibServer responsible for segmenting pointcloud to be running
@@ -20,3 +33,7 @@ Requires:
 * `roslaunch fetch_api move_group.launch`
 * Classifier ActionlibServer
 * `roslaunch recycle controller.launch`
+
+## Classifier
+* Logger
+* `roslaunch recycle classifier.launch`

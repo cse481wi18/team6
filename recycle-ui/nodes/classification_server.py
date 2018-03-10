@@ -48,7 +48,9 @@ class ClassificationServer():
                   log_id,
                   predicted_category,
                   actual_category,
-                  pointcloud_file_path
+                  pointcloud_file_path,
+                  image_file_path,
+                  feature_file_path
             FROM classification_log
             WHERE predicted_category=?
             AND actual_category IS NULL
@@ -66,7 +68,10 @@ class ClassificationServer():
             cloud_topic_name = '/log{}_pointcloud'.format(log[0])
             log_items.append(LogItem(log_id=log[0],
                 predicted_category=str(log[1]),
-                actual_category=str(log[2])))
+                actual_category=str(log[2]),
+                pointcloud_file_path=str(log[3]),
+                image_file_path=str(log[4]),
+                feature_file_path=str(log[5])))
 
             # prepare to publish pointclouds
             rospy.logerr(log)

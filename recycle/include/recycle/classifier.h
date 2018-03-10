@@ -29,14 +29,20 @@ namespace recycle {
   
   class Classifier {
     public:
-     explicit Classifier(std::string classify_name, std::string add_item_name);  
+     explicit Classifier(std::string database_path,
+                         std::string classify_name, 
+                         std::string add_item_name, 
+                         std::string logger_name);  
 
     private:
       ros::NodeHandle nh_;
-      actionlib::SimpleActionServer<recycle_msgs::ClassifyAction> classifier_as_;
-      actionlib::SimpleActionServer<recycle_msgs::AddItemAction> add_item_as_;
+      std::string database_path_;
       std::string classifier_action_name_;
       std::string add_item_action_name_;
+      std::string logger_name_;
+      actionlib::SimpleActionServer<recycle_msgs::ClassifyAction> classifier_as_;
+      actionlib::SimpleActionServer<recycle_msgs::AddItemAction> add_item_as_;
+      actionlib::SimpleActionClient<recycle_msgs::DbLogAction> logging_ac_;
       void ClassifierActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal);
       void AddItemActionCallback(const recycle_msgs::AddItemGoalConstPtr &goal);
   };

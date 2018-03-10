@@ -1,14 +1,21 @@
 #include "recycle/classifier.h"
 
 namespace recycle {
-  Classifier::Classifier(std::string classify_name,
-      std::string add_item_name) :
+  Classifier::Classifier(std::string database_path, 
+                        std::string classify_name,
+                        std::string add_item_name,
+                        std::string logger_name) :
     classifier_as_(nh_, classify_name, boost::bind(&Classifier::ClassifierActionCallback, this, _1), false),
     add_item_as_(nh_, add_item_name, boost::bind(&Classifier::AddItemActionCallback, this, _1), false),
+    logging_ac_(logger_name, true), 
+    database_path_(database_path),
     classifier_action_name_(classify_name),
-    add_item_action_name_(add_item_name) {
+    add_item_action_name_(add_item_name),
+    logger_name_(logger_name) {
       classifier_as_.start();
       add_item_as_.start();
+      logging_ac_.waitForServer();
+      ROS_INFO("INIT COMPLETE");
     }
 
   void Classifier::ClassifierActionCallback(const recycle_msgs::ClassifyGoalConstPtr &goal)  {
@@ -27,15 +34,10 @@ namespace recycle {
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
 
     recycle::ObjectRecognizer recognizer;
-    // TODO: CHANGE THE DATABASE
-    recognizer.LoadData("/home/team6/catkin_ws/src/cse481wi18/database/temp.db");
-
-    ros::NodeHandle nh;
-    ros::Publisher table_pub =
-      nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
+    recognizer.LoadData(database_path_);
     ROS_INFO("Segmenting");
-    recycle::Segmenter segmenter(table_pub, recognizer);
-    segmenter.SegmentAndClassify(downsampled, &result);
+    recycle::Segmenter segmenter(recognizer);
+    segmenter.SegmentAndClassify(downsampled, &result, &logging_ac_);
     classifier_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
   } 
@@ -46,6 +48,7 @@ namespace recycle {
     ROS_INFO("ADDING ITEM");
     
     sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
+    
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
@@ -53,13 +56,10 @@ namespace recycle {
     PointCloudC::Ptr cropped = cropper.Crop(cloud);
     Downsampler downsampler;
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
-
-    ros::NodeHandle nh;
-
+    ROS_INFO("Segmenting");
     recycle::Segmenter segmenter;
     segmenter.AddItem(goal->category, downsampled, &result);
 
-    ROS_INFO("REPLYING TO CLIENT");
     add_item_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
   } 

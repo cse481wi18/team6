@@ -133,9 +133,9 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   extract.setIndices(table_inliers);
   extract.filter(*table_cloud);
 
-  sensor_msgs::PointCloud2 msg_out;
-  pcl::toROSMsg(*table_cloud, msg_out);
-  table_cloud_pub_.publish(msg_out); 
+  // sensor_msgs::PointCloud2 msg_out;
+  // pcl::toROSMsg(*table_cloud, msg_out);
+  // table_cloud_pub_.publish(msg_out); 
 
   //Use simple_grasping instead of our own function
   PointCloudC::Ptr extract_out(new PointCloudC());
@@ -149,8 +149,8 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   ROS_INFO("%s", table_cloud->header.frame_id.c_str());
   table->cloud = table_cloud;
   table->pose = table_pose;
-  table->dimensions.x = table_shape.dimensions[1]; // Hacky fix
-  table->dimensions.y = table_shape.dimensions[0];
+  table->dimensions.x = table_shape.dimensions[0];
+  table->dimensions.y = table_shape.dimensions[1];
   table->dimensions.z = table_shape.dimensions[2];
   // ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
   // ROS_INFO_STREAM("TABLE POSE " << table_pose);
@@ -190,20 +190,11 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   }
 }
 
-Segmenter::Segmenter(const ros::Publisher& table_cloud_pub,
-                      const ObjectRecognizer& recognizer)
-    : ac("recycle/dblog_action", true),
-    table_cloud_pub_(table_cloud_pub),
-    recognizer_(recognizer) {
-      ac.waitForServer();
-      ROS_INFO("init done");
-      CONFIDENCE_THRESHOLD = 0.5;
-    }
+Segmenter::Segmenter(const ObjectRecognizer& recognizer) : recognizer_(recognizer) {
+  CONFIDENCE_THRESHOLD = 0.5;
+}
 
-Segmenter::Segmenter()
-  : ac("recycle/dblog_action", true) {
-  ac.waitForServer();
-  ROS_INFO("init done");  
+Segmenter::Segmenter()  {  
   CONFIDENCE_THRESHOLD = 0.5;
 }
 
@@ -221,18 +212,28 @@ void Segmenter::AddItem(std::string category,
   if (objects.size() != 1) {
     ROS_INFO_STREAM("Expected to find 1 object. Found " << objects.size());
   }
-  // for (size_t i = 0; i < objects.size(); ++i) {
-  Object& object = objects[0];
+
+  int item_index = 0;
+  double largest_vol = -1;
+  for (int i = 0; i < objects.size(); i++) {
+    Object& current_object = objects[i];
+    double current_vol = current_object.dimensions.x * current_object.dimensions.y * current_object.dimensions.z;
+    if (current_vol > largest_vol) {
+      item_index = i;
+      largest_vol = current_vol;
+    }
+  }
+
+  Object& object = objects[item_index];
   object.name = category;
-  // Save and reply to the logger
   recycle_msgs::ObjectFeatures features;
   recycle::ExtractFeatures(object, &features);
   saver_.Log(object, &features, &(result->to_log), false);
-  // }
 }
 
 void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
-                                   recycle_msgs::ClassifyResult* result) {
+                                   recycle_msgs::ClassifyResult* result,
+                                   actionlib::SimpleActionClient<recycle_msgs::DbLogAction>* ac) {
 
   PointCloudC::Ptr cloud(new PointCloudC());
   std::vector<int> index;
@@ -266,7 +267,6 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     // Recognize the object.
     std::string name;
     double confidence;
-    // TODO: recognize the object with the recognizer_.
     recognizer_.Recognize(object, &name, &confidence);
     confidence = round(1000 * confidence) / 1000;
 
@@ -284,7 +284,7 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     saver_.Log(object, &features, &item, true);
     recycle_msgs::DbLogGoal goal;
     goal.log_item = item;
-    ac.sendGoal(goal);
+    ac->sendGoal(goal);
   }
 }
 }  // namespace recycle

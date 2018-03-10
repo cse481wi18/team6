@@ -235,7 +235,6 @@ void Segmenter::Callback(const sensor_msgs::PointCloud2& msg) {
       object_marker.color.a = 0.3;
       marker_pub_.publish(object_marker);
 
-
       // Recognize the object.
       std::string name;
       double confidence;

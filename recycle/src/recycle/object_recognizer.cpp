@@ -44,9 +44,9 @@ namespace {
 int SQLCallback(void *data, int argc, char **argv, char **azColName) {
   printf("%s = %s\n", azColName[0], argv[0] ? argv[0] : "NULL");
 
-  std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
   // ROS_INFO_STREAM("INSIDE CALLBACK ADDRESS: " << dataset_point);
   std::string type = argv[0];
+  std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
   ROS_INFO_STREAM("Loading " << argv[1]);
   rosbag::Bag bag;
   bag.open(argv[1], rosbag::bagmode::Read);
@@ -83,7 +83,7 @@ int ObjectRecognizer::LoadData(const std::string& database_path) {
     fprintf(stderr, "Opened database successfully\n");
   }
 
-  std::string statement = "SELECT predicted_category, feature_file_path from classification_log";
+  std::string statement = "SELECT actual_category, feature_file_path FROM classification_log WHERE actual_category is not NULL";
   
   rc = sqlite3_exec(db, statement.c_str(), SQLCallback, static_cast<void*>(&dataset_), &zErrMsg);
 
