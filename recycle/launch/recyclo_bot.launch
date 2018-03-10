@@ -11,6 +11,9 @@
 	<include file="$(find fetch_api)/launch/move_group.launch">
 	</include>
 
+
+  	<node pkg="recycle" type="logger_server.py" name="logger" />
+
 	<!-- Run Classification ActionServer -->
 	<!-- Run Controller node -->
 	<!-- Run UI Server -->
