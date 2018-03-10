@@ -14,3 +14,9 @@ Requires: navigation launch and the ActionLibServer responsible for segmenting p
 
 The Polymer command will tell you which port the frontend is running on and you should be able to visit `mifune.cs.washington.edu:PORT`
 
+## Controller
+Requires:
+* `roslaunch recycle navigation.launch`
+* `roslaunch fetch_api move_group.launch`
+* Classifier ActionlibServer
+* `roslaunch recycle controller.launch`

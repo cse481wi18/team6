@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 import copy
 import math
+import numpy as np
 
 import actionlib
 import fetch_api
 import rospy
+import utils
 from moveit_python import PlanningSceneInterface
 
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
@@ -218,8 +220,8 @@ class Controller(object):
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             # TODO: had to flip the x and y for some reason
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.x,
                                         obstacle_dim.y,
+                                        obstacle_dim.x,  # TODO hacky
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x + 0.05, # TODO
                                         obstacle_pose.pose.position.y,
@@ -255,6 +257,52 @@ class Controller(object):
         # TODO remove table obstacle
 
 
+    # Attempts to align gripper to object's shortest dimension
+    # Returns True if success, False otherwise
+    def _align_gripper_to_shortest_dim(self, gripper_goal, obj_posestamped, obj_dim):
+        # 1. check if there is a grippable dimension
+        if obj_dim.x > self.GRIPPER_WIDTH and obj_dim.y > self.GRIPPER_WIDTH:
+            rospy.logwarn("Object is too big to grip!")
+            return False
+
+        # # 2. If yes, rotate gripper
+        # #   a. Find shortest dim in F_obj, create a unit vector
+        # unit_in_obj = np.array([0, 0, 0, 1])
+        # if obj_dim.x < obj_dim.y:
+        #     # x unit vector [1,0,0,1]
+        #     unit_in_obj[0] = 1
+        # else:
+        #     # y unit vector [0,1,0,1]
+        #     unit_in_obj[1] = 1
+
+        # #   b. Rotate unit vector to be in F_baselink without translation
+        # unit_in_base = utils.unit_in_base(unit_in_obj, obj_posestamped)
+
+        # #   c. Compute theta: arctan2(x'/y') -> [-pi, pi]
+        # theta = np.arctan2(unit_in_base[0], unit_in_base[1])
+
+        # rospy.logerr("theta: {}".format(theta))
+
+        # #   d. Rotate gripper theta degrees about Z_baselink axis
+        # aligned_orien = utils.rotate_quaternion_by_angle(gripper_goal.pose.orientation, theta)
+        # gripper_goal.pose.orientation = aligned_orien
+
+        theta = utils.quaternion_to_angle(obj_posestamped.pose.orientation)
+
+        rospy.logerr("theta1: {}".format(theta))
+
+        # Gripper is default to align with base_link's y axis
+        if obj_dim.x < obj_dim.y:
+            theta = -(np.pi/2.0 - theta)
+
+        rospy.logerr("theta2: {}".format(theta))
+
+        aligned_orien = utils.rotate_quaternion_by_angle(gripper_goal.pose.orientation, theta)
+        gripper_goal.pose.orientation = aligned_orien
+
+        return self._arm_move_to_pose_attempt(gripper_goal, "rotate")
+
+
     # Given the target object's pose and dimension, and the target
     # bin's pose, pick up object and drop in the bin.
     def _pickup_object(self, obj_posestamped, obj_dim, bin_pose):
@@ -274,22 +322,10 @@ class Controller(object):
             # if we can't get to the pre grasp pose, move on
             return False
 
-        # 2. Align gripper with shortest x or y orientation
-        # if x dim is smallest (in base_link), rotate wrist
-        # if y dim is smallest (in base_link), no need to rotate
-        rospy.logerr("X_DIM={}, Y_DIM={}".format(obj_dim.x, obj_dim.y))
-        rotated = False
-        if obj_dim.y > self.GRIPPER_WIDTH:
-            if obj_dim.x < obj_dim.y:
-                gripper_goal.pose.orientation = self.Y_ALIGN_ORIENTATION
-                if self._arm_move_to_pose_attempt(gripper_goal, "rotate"):
-                    rotated = True
-                else:
-                    # if we can't rotate to the shortest dim, we can't pick up the object, move on
-                    return False
-            else:
-                rospy.logwarn("object is too big to grip!")
-                return False
+        # 2. Align gripper with object's shortest dimension
+        if not self._align_gripper_to_shortest_dim(gripper_goal, obj_posestamped, obj_dim):
+            rospy.logwarn("Cannot align gripper to shortest dimension :(")
+            return False
 
         # 3. Move down to grasp pose:
         # max-z(gripper base X cm above the object, fingertip Ycm above table)
@@ -303,7 +339,7 @@ class Controller(object):
 
         # 4. Grip object and attach as obstacle
         self._gripper.close()
-        self._attach_object_obstacle(obj_dim, rotated=rotated)
+        self._attach_object_obstacle(obj_dim)
 
         # 5. Move up to post-grasp pose: Xcm back up
         gripper_goal.pose.position.z += self.POST_GRASP_DIST
@@ -322,11 +358,11 @@ class Controller(object):
         if not self._arm_move_to_pose_attempt(gripper_goal, "bin"):
             # if we can't move to the bin, try to set the obj back down
             gripper_goal.pose = grasp_pose
-            gripper_goal.pose.position.z += 0.008 # just to leave some room for collision
+            gripper_goal.pose.position.z += 0.01 # just to leave some room for collision
             # TODO can't go back down
             if not self._arm_move_to_pose_attempt(gripper_goal, "bin fail, dropoff"):
                 rospy.logerr("Could not put object back down, going to drop it anyway! :O")
-            
+
             self._drop_object()
             return False
 
@@ -354,13 +390,14 @@ class Controller(object):
                 succeeded = True
                 break
         # give robot's arm time to settle down
-        rospy.sleep(1)
+        rospy.sleep(1.5)
 
         self._move_summary.append({'label': action_label, 'num_tried': i+1, 'result': r})
         return succeeded
 
 
-    def _attach_object_obstacle(self, obj_dim, rotated=False):
+    def _attach_object_obstacle(self, obj_dim):
+        # TODO figure out the correct orientation
         rospy.logerr("ATTACH")
         rospy.logerr(self._planning_scene.getKnownAttachedObjects())
         rospy.logerr(self._planning_scene.getKnownCollisionObjects())
@@ -373,18 +410,12 @@ class Controller(object):
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
+
+        # ASSUMPTION: gripper should always be aligned with the shortest dimension at this point
         attach_dim = Vector3()
         attach_dim.x = obj_dim.z  # gripper's x axis points outwards, down in this case
-        # gripper's y axis connects the fingers, so the shortest dim
-        # gripper's z axis is perpendicular to the fingers
-        if rotated:
-            # object's x dim was the shortest
-            attach_dim.y = obj_dim.x
-            attach_dim.z = obj_dim.y
-        else:
-            # object's y dim was the shortest
-            attach_dim.y = obj_dim.y
-            attach_dim.z = obj_dim.x
+        attach_dim.y = min(obj_dim.x, obj_dim.y) # gripper's y axis connects the fingers
+        attach_dim.z = max(obj_dim.x, obj_dim.y) # gripper's z axis is perpendicular to the fingers
 
         self._planning_scene.attachBox(name,
                                        attach_dim.x,
