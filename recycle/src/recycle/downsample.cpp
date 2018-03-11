@@ -10,7 +10,7 @@ namespace recycle {
   Downsampler::Downsampler() {}
 
   PointCloudC::Ptr Downsampler::Downsample(PointCloudC::Ptr cloud) {
-    // ROS_INFO("Got point cloud with %ld points", cloud->size());
+    ROS_INFO("Got point cloud with %ld points", cloud->size());
 
     PointCloudC::Ptr downsampled_cloud(new PointCloudC());
     pcl::VoxelGrid<PointC> vox;
@@ -20,7 +20,7 @@ namespace recycle {
     vox.setLeafSize(voxel_size, voxel_size, voxel_size);
     vox.filter(*downsampled_cloud);
 
-    // ROS_INFO("Downsampled to %ld points", downsampled_cloud->size());
+    ROS_INFO("Downsampled to %ld points", downsampled_cloud->size());
     return downsampled_cloud;
   }
 }

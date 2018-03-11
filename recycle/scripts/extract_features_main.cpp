@@ -84,7 +84,7 @@ int main(int argc, char** argv) {
 
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
   recycle::Segmenter segmenter(dummy_recognizer);
-  segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud);
+  segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud, true);
 
   if (objects.size() != 1) {
     std::cerr << path << " Expected to see exactly one object, found " << objects.size()

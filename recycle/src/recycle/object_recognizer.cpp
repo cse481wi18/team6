@@ -42,12 +42,12 @@ namespace {
 
 
 int SQLCallback(void *data, int argc, char **argv, char **azColName) {
-  printf("%s = %s\n", azColName[0], argv[0] ? argv[0] : "NULL");
+  // printf("%s = %s\n", azColName[0], argv[0] ? argv[0] : "NULL");
 
   // ROS_INFO_STREAM("INSIDE CALLBACK ADDRESS: " << dataset_point);
   std::string type = argv[0];
   std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
-  ROS_INFO_STREAM("Loading " << argv[1]);
+  // ROS_INFO_STREAM("Loading " << argv[1]);
   rosbag::Bag bag;
   bag.open(argv[1], rosbag::bagmode::Read);
   std::vector<std::string> topics;
