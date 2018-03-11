@@ -23,7 +23,7 @@
 	<!-- <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" /> -->
 
 	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen" >
-		<remap from="cloud_in" to="mock_point_cloud" />
-		<!-- <remap from="cloud_in" to="/head_camera/depth_registered/points" /> -->
+		<!-- <remap from="cloud_in" to="mock_point_cloud" /> -->
+		<remap from="cloud_in" to="/head_camera/depth_registered/points" />
 	</node>
 </launch>
