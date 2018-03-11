@@ -4,3 +4,4 @@
 logs/
 bower_components/
 *.bag
+database/temp.db
