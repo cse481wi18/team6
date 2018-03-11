@@ -9,11 +9,13 @@
 <link rel="import" href="../bower_components/iron-pages/iron-pages.html">
 <link rel="import" href="../bower_components/iron-selector/iron-selector.html">
 
+<link rel="import" href="../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
-<link rel="import" href="recycle-ui-map-control.html">
-<link rel="import" href="recycle-ui-class-control.html">
-<link rel="import" href="recycle-ui-add-control.html">
+<link rel="lazy-import" href="recycle-ui-map-control.html">
+<link rel="lazy-import" href="recycle-ui-add-control.html">
+<link rel="lazy-import" href="recycle-ui-class-control.html">
+
 
 <dom-module id="recycle-ui-app">
   <template>
@@ -75,7 +77,7 @@
     <!-- this app-route manages the top-level routes -->
     <app-route
         route="{{route}}"
-        pattern="/:view"
+        pattern="/:page"
         data="{{routeData}}"
         tail="{{subRoute}}"></app-route>
 
@@ -83,10 +85,10 @@
         <app-header slot="header" reveals effects="waterfall">
           <app-toolbar>
             <img id="logo" src="../Recyclobot_Logo.png" alt="logo" />
-            <div id="title" main-title>Recyclo-bot</div>
+            <div id="title" main-title>Recycl-o-bot</div>
             <div id="links">
                 <a href="/map">View Map</a> /
-                <a href="/classifications">View Classficiations</a> /
+                <a href="/class">View Classficiations</a> /
                 <a href="/add">Add Item</a>
             </div>
           </app-toolbar>
@@ -94,8 +96,8 @@
 
 
         <!-- Load view based on route -->
-        <iron-pages selected="[[routeData.view]]" attr-for-selected="name" fallback-selection="map">
-          <recycle-ui-class-control name="classifications" route="{{subRoute}}"></recycle-ui-class-control>
+        <iron-pages selected="[[page]]" attr-for-selected="name" fallback-selection="map" role="main">
+          <recycle-ui-class-control name="class" route="{{subRoute}}"></recycle-ui-class-control>
           <recycle-ui-map-control name="map" route="{{subRoute}}"></recycle-ui-map-control>
           <recycle-ui-add-control name="add" route="{{subRoute}}"></recycle-ui-add-control>
         </iron-pages>
@@ -122,13 +124,41 @@
               view: 'map'
             }
           },
-          subRoute: Object
+          subRoute: Object,
+          page: {
+            type: String,
+            reflectToAttribute: true,
+            observer: '_pageChanged'
+          }
         };
+      }
+
+      static get observers() {
+        return [
+          '_routePageChanged(routeData.page)'
+        ]
       }
 
       _drawerSelected() {
         console.log("what", this.$.drawer);
         if (!this.$.drawer.persistent) this.$.drawer.close();
+      }
+
+      _routePageChanged(page) {
+        // If no page was found in the route data, page will be an empty string.
+        // Default to 'view1' in that case.
+        this.page = page || 'map';
+      }
+
+      _pageChanged(page) {
+        // Load page import on demand. Show 404 page if fails
+        const resolvedPageUrl = this.resolveUrl('recycle-ui-' + page + '-control.html');
+        Polymer.importHref(
+            resolvedPageUrl,
+            null,
+            //this._showPage404.bind(this),
+            null,
+            true);
       }
     }
 
