@@ -145,7 +145,7 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
 
   // sensor_msgs::PointCloud2 msg_out;
   // pcl::toROSMsg(*table_cloud, msg_out);
-  // table_cloud_pub_.publish(msg_out); 
+  // above_table_pub_.publish(msg_out); 
 
   //Use simple_grasping instead of our own function
   PointCloudC::Ptr extract_out(new PointCloudC());
@@ -162,12 +162,14 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   ROS_INFO("%s", table_cloud->header.frame_id.c_str());
   table->cloud = table_cloud;
   table->pose = table_pose;
-  table->pose.position.z += table_obstacle_padding;
+  // table->pose.position.z += table_obstacle_padding;
   table->dimensions.x = table_shape.dimensions[0];
   table->dimensions.y = table_shape.dimensions[1];
-  table->dimensions.z = table_shape.dimensions[2];
-  // ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
-  // ROS_INFO_STREAM("TABLE POSE " << table_pose);
+  table->dimensions.z = table_shape.dimensions[2] + table_obstacle_padding;
+  // ROS_INFO_STREAM("Table dimensions!!!!!!!! ");
+  // table->dimensions.y = table_shape.dimensions[2];
+  ROS_INFO_STREAM("TABLE DIMENSIONS " << table_shape);
+  ROS_INFO_STREAM("TABLE POSE " << table_pose);
 
   obstacles->push_back(*table);
 

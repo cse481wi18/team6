@@ -161,7 +161,8 @@ class Controller(object):
             goal.target_pose = request.target_pose
             self._move_base_client.send_goal(goal)
             self._move_base_client.wait_for_result()
-            rospy.sleep(3)
+            # TODO : Test without sleeping
+            # rospy.sleep(3)
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
@@ -214,8 +215,16 @@ class Controller(object):
             rospy.loginfo(obstacle_pose)
             rospy.loginfo(obstacle_dim)
 
-            # TODO
-            obstacle_dim.y = 2 * obstacle_dim.y
+            # TODO:
+            # Note for Ariel:
+            # Perception is going to always return the dimensions in the true order,
+            # i.e. x is always x and y is always y.
+            # In simulation, flipping the dimensions here results in the correct behaviour.
+            # I will test it on the real robot tomorrow morning to see if it has the same
+            # behaviour irl as well.
+
+            # obstacle_dim.y *= 2
+            obstacle_dim.x *= 2 # Doubling the x dimension here since we're flipping the dimensions
             # print("TABLE LOCATION")
             # print([obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
             #     obstacle_pose.pose.position.x, obstacle_pose.pose.position.y, obstacle_pose.pose.position.z])
@@ -223,8 +232,8 @@ class Controller(object):
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             # TODO: had to flip the x and y for some reason
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.x,
                                         obstacle_dim.y,  # TODO hacky
+                                        obstacle_dim.x,
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x, # TODO
                                         obstacle_pose.pose.position.y,

@@ -52,7 +52,6 @@ class Segmenter {
   recycle::Saver saver_;
   ros::Publisher above_table_pub_;
   ObjectRecognizer recognizer_;
-  int CONFIDENCE_THRESHOLD;
 
   // Finds the largest horizontal surface in the given point cloud.
   // This is useful for adding a collision object to MoveIt.
