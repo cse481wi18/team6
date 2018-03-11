@@ -143,9 +143,9 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   extract.setIndices(table_inliers);
   extract.filter(*table_cloud);
 
-  // sensor_msgs::PointCloud2 msg_out;
-  // pcl::toROSMsg(*table_cloud, msg_out);
-  // above_table_pub_.publish(msg_out); 
+  sensor_msgs::PointCloud2 msg_out;
+  pcl::toROSMsg(*table_cloud, msg_out);
+  above_table_pub_.publish(msg_out); 
 
   //Use simple_grasping instead of our own function
   PointCloudC::Ptr extract_out(new PointCloudC());
@@ -179,9 +179,9 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   
   extract.setNegative(true);
   extract.filter(*above_surface_cloud);
-  sensor_msgs::PointCloud2 msg_out;
-  pcl::toROSMsg(*above_surface_cloud, msg_out);
-  above_table_pub_.publish(msg_out); 
+  // sensor_msgs::PointCloud2 msg_out;
+  // pcl::toROSMsg(*above_surface_cloud, msg_out);
+  // above_table_pub_.publish(msg_out); 
 
   // bounding box for objects
   for (size_t i = 0; i < object_indices.size(); ++i) {

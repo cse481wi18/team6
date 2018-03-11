@@ -1,28 +1,28 @@
 <launch>
 	<arg name="data_dir" />
+
+	<!-- Segmentation -->
 	<param name="ec_cluster_tolerance" value="0.03" />
 	<param name="ec_min_cluster_size_add" value="100" />
 	<param name="ec_max_cluster_size_add" value="750000" />
 	<param name="ec_min_cluster_size" value="100" />
 	<param name="ec_max_cluster_size" value="7500" />
 	<param name="distance_above_plane" value="0.01" />
+
+	<param name="table_obstacle_padding" value="0.10" />
+
+	<!-- Cropping -->
 	<param name="crop_min_x" value="-1" />
 	<param name="crop_max_x" value="1.2" />
 	<param name="crop_min_y" value="-0.4" />
 	<param name="crop_max_y" value="0.5" />
 	<param name="crop_min_z" value="-1" />
 	<param name="crop_max_z" value="1" />
+	
+	<!-- Classification-->
+	<param name="landfill_confidence_threshold" value="0.4" />	
 	<param name="color_weight" value="10" />
 	<param name="size weight" value="15" />
-	<!-- TODO change map -->
-<!-- 	<arg name="map_file" default="/home/team6/maps/playground.yaml" />
-
-	<include file="$(find fetch_navigation)/launch/fetch_nav.launch">
-		<arg name="map_file" value="$(arg map_file)"/>
-	</include> -->
-
-	<!-- TODO remove rviz -->
-	<!-- <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" /> -->
 
 	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen" >
 		<!-- <remap from="cloud_in" to="mock_point_cloud" /> -->
