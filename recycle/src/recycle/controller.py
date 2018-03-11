@@ -214,6 +214,8 @@ class Controller(object):
             rospy.loginfo(obstacle_pose)
             rospy.loginfo(obstacle_dim)
 
+            # TODO
+            obstacle_dim.y = 2 * obstacle_dim.y
             # print("TABLE LOCATION")
             # print([obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
             #     obstacle_pose.pose.position.x, obstacle_pose.pose.position.y, obstacle_pose.pose.position.z])
@@ -221,10 +223,10 @@ class Controller(object):
             # TODO: The parameters might need to be changed when we stop using the mock point cloud.
             # TODO: had to flip the x and y for some reason
             self._planning_scene.addBox('obstalce_' + str(i),
-                                        obstacle_dim.y,
-                                        obstacle_dim.x,  # TODO hacky
+                                        obstacle_dim.x,
+                                        obstacle_dim.y,  # TODO hacky
                                         obstacle_dim.z,
-                                        obstacle_pose.pose.position.x + 0.05, # TODO
+                                        obstacle_pose.pose.position.x, # TODO
                                         obstacle_pose.pose.position.y,
                                         obstacle_dim.z / 2.0, # Hacky fix
                                         wait=True)
@@ -403,7 +405,7 @@ class Controller(object):
 
         # ASSUMPTION: gripper should always be aligned with the shortest dimension at this point
         attach_dim = Vector3()
-        attach_dim.x = obj_dim.z  # gripper's x axis points outwards, down in this case
+        attach_dim.x = obj_dim.z + 0.005 # gripper's x axis points outwards, down in this case
         attach_dim.y = min(obj_dim.x, obj_dim.y) # gripper's y axis connects the fingers
         attach_dim.z = max(obj_dim.x, obj_dim.y) # gripper's z axis is perpendicular to the fingers
 

@@ -154,11 +154,15 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   shape_msgs::SolidPrimitive table_shape;
   geometry_msgs::Pose table_pose;
   FitBox(*table_cloud, coeff, *extract_out, table_shape, table_pose);
-      
+  
+  double table_obstacle_padding;
+  ros::param::param("table_obstacle_padding", table_obstacle_padding, 0.04);
+
   recycle::Object *table = new recycle::Object;
   ROS_INFO("%s", table_cloud->header.frame_id.c_str());
   table->cloud = table_cloud;
   table->pose = table_pose;
+  table->pose.position.z += table_obstacle_padding;
   table->dimensions.x = table_shape.dimensions[0];
   table->dimensions.y = table_shape.dimensions[1];
   table->dimensions.z = table_shape.dimensions[2];
@@ -176,7 +180,7 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   sensor_msgs::PointCloud2 msg_out;
   pcl::toROSMsg(*above_surface_cloud, msg_out);
   above_table_pub_.publish(msg_out); 
-  
+
   // bounding box for objects
   for (size_t i = 0; i < object_indices.size(); ++i) {
     // Reify indices into a point cloud of the object.
@@ -203,14 +207,12 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   }
 }
 
-Segmenter::Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer) : above_table_pub_(above_table_pub),
-recognizer_(recognizer) {
-  CONFIDENCE_THRESHOLD = 0.5;
-}
+Segmenter::Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer) 
+  : above_table_pub_(above_table_pub),
+    recognizer_(recognizer) {}
 
-Segmenter::Segmenter(ros::Publisher above_table_pub) : above_table_pub_(above_table_pub) {  
-  CONFIDENCE_THRESHOLD = 0.5;
-}
+Segmenter::Segmenter(ros::Publisher above_table_pub) 
+  : above_table_pub_(above_table_pub) {}
 
 void Segmenter::AddItem(std::string category,
                         PointCloudC::Ptr cloud_unfiltered, 
@@ -284,7 +286,10 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     recognizer_.Recognize(object, &name, &confidence);
     confidence = round(1000 * confidence) / 1000;
 
-    if (confidence > CONFIDENCE_THRESHOLD) {
+    double landfill_confidence_threshold;
+    ros::param::param("landfill_confidence_threshold", landfill_confidence_threshold, 0.4);
+
+    if (confidence > landfill_confidence_threshold) {
       result->classifications.push_back(name);
     } else {
       result->classifications.push_back("landfill");
