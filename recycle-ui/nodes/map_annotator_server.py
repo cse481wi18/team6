@@ -56,7 +56,7 @@ class MapPoses:
 
     def _goto(self, action):
         goal_msg = ActionPose()
-        goal_msg.action = 'bus' # TODO (jkbach): will have to update this
+        goal_msg.action = self._poses[action.name].description
         goal_msg.target_pose = PoseStamped()
         goal_msg.target_pose.pose = self._poses[action.name].pose
         goal_msg.target_pose.header.frame_id = 'map'
@@ -81,7 +81,7 @@ class MapPoses:
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "map"
         int_marker.name = action.name
-        int_marker.description = action.name
+        int_marker.description = action.kind
         int_marker.pose.position.x = 0
         int_marker.pose.position.y = 0
         int_marker.pose.position.z = 0
@@ -107,6 +107,19 @@ class MapPoses:
         arrow_marker.color.b = 0.5
         arrow_marker.color.a = 1.0
 
+        label_marker = Marker()
+        label_marker.type = Marker.TEXT_VIEW_FACING
+        label_marker.pose.orientation.w = 1
+        label_marker.pose.position.z = .2
+        label_marker.scale.x = .3
+        label_marker.scale.y = .3
+        label_marker.scale.z = .3
+        label_marker.color.r = 0
+        label_marker.color.g = 0
+        label_marker.color.b = 1.0
+        label_marker.color.a = 1.0
+        label_marker.text = action.name
+
         button_control = InteractiveMarkerControl()
         button_control.orientation.w = 1
         button_control.orientation.x = 0
@@ -115,6 +128,7 @@ class MapPoses:
         button_control.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
         button_control.always_visible = True
         button_control.markers.append(arrow_marker)
+        button_control.markers.append(label_marker)
         int_marker.controls.append(button_control)
 
         self._marker_server.insert(int_marker, self._handle_click)

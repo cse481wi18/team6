@@ -121,17 +121,18 @@
       </paper-toolbar>-->
       <div id="content" class="layout horizontal">
         <div id="controls">
-          <h2>Poses</h2>
-          <paper-radio-group selected="bus">
+          <h2>Create Pose</h2>
+          <paper-radio-group selected="{{actionSelected}}">
             Action at Pose:
             <paper-radio-button name="bus">Bus</paper-radio-button>
             <paper-radio-button name="rest">Rest</paper-radio-button>
           </paper-radio-group>
-          <paper-input id="pose-input" label="New Pose Name" value="{{poseNameInput}}">
+          <paper-input always-float-label id="pose-input" label="New Pose Name" value="{{poseNameInput}}">
             <paper-button on-tap="_handleCreate">Create</paper-button>
             <paper-icon-button slot="suffix" on-tap="_handleCreate" icon="add" alt="create" title="create">
             </paper-icon-button>
           </paper-input>
+          <h2>Poses</h2>
           <div id="poses">
             <template is="dom-repeat" items="[[poseNames.names]]">
               <recycle-ui-map-pose ros="[[ros]]" pose-name="[[item]]"></recycle-ui-map-pose>
@@ -156,20 +157,27 @@
           prop1: {
             type: String,
             value: 'recycle-ui-app'
+          },
+          actionSelected: {
+            type: String,
+            value: 'bus'
           }
         };
       }
 
       _handleConnection() {
         this.status = 'Connected to the websocket server.';
+        console.log('connected to websocket');
       }
 
       _handleClose() {
         this.status = 'Closed connection to the websocket server.';
+        console.log('closed connection to websocket');
       }
 
       _handleError() {
         this.status = 'Error connecting to the websocket server.';
+        console.log('error connecting to websocket');
       }
 
       _handlePoseNames(evt) {
@@ -191,8 +199,10 @@
         }
         var msg = {
           command: 'create',
-          name: poseName
+          name: poseName,
+          kind: this.actionSelected
         };
+        console.log('sending create msg', msg);
         this.$.userActions.publish(msg);
         this.poseNameInput = "";
       }
