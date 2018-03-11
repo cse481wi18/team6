@@ -73,7 +73,8 @@ void Segmenter::SegmentSurface(PointCloudC::Ptr cloud,
 
 void Segmenter::SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
                            pcl::PointIndices::Ptr surface_indices,
-                           std::vector<pcl::PointIndices>* object_indices) {
+                           std::vector<pcl::PointIndices>* object_indices,
+                           bool classify) {
   pcl::ExtractIndices<PointC> extract;
   pcl::PointIndices::Ptr above_surface_indices(new pcl::PointIndices());
   extract.setInputCloud(cloud);
@@ -85,16 +86,24 @@ void Segmenter::SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clo
 
   double cluster_tolerance;
   int min_cluster_size, max_cluster_size;
+  int min_cluster_size_add, max_cluster_size_add;
   ros::param::param("ec_cluster_tolerance", cluster_tolerance, 0.01);
   ros::param::param("ec_min_cluster_size", min_cluster_size, 10);
   ros::param::param("ec_max_cluster_size", max_cluster_size, 200);
+  ros::param::param("ec_min_cluster_size_add", min_cluster_size_add, 10);
+  ros::param::param("ec_max_cluster_size_add", max_cluster_size_add, 200);
 
   pcl::EuclideanClusterExtraction<PointC> euclid;
   euclid.setInputCloud(cloud);
   euclid.setIndices(above_surface_indices);
   euclid.setClusterTolerance(cluster_tolerance);
-  euclid.setMinClusterSize(min_cluster_size);
-  euclid.setMaxClusterSize(max_cluster_size);
+  if (classify) {
+    euclid.setMinClusterSize(min_cluster_size);
+    euclid.setMaxClusterSize(max_cluster_size);
+  } else {
+    euclid.setMinClusterSize(min_cluster_size_add);
+    euclid.setMaxClusterSize(max_cluster_size_add);
+  }
   euclid.extract(*object_indices);
 
   // Find the size of the smallest and the largest object,
@@ -119,7 +128,8 @@ void Segmenter::SegmentSurfaceObjects(pcl::PointCloud<pcl::PointXYZRGB>::Ptr clo
 void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
                           std::vector<Object>* objects,
                           std::vector<Object>* obstacles,
-                          PointCloudC::Ptr above_surface_cloud) {
+                          PointCloudC::Ptr above_surface_cloud,
+                          bool classify) {
   // Same as callback, but with visualization code removed.
   pcl::PointIndices::Ptr table_inliers(new pcl::PointIndices());
   pcl::ModelCoefficients::Ptr coeff(new pcl::ModelCoefficients());
@@ -159,7 +169,7 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
 
   // segmenting surface objects
   std::vector<pcl::PointIndices> object_indices;
-  Segmenter::SegmentSurfaceObjects(cloud, table_inliers, &object_indices);
+  Segmenter::SegmentSurfaceObjects(cloud, table_inliers, &object_indices, classify);
   
   extract.setNegative(true);
   extract.filter(*above_surface_cloud);
@@ -208,7 +218,7 @@ void Segmenter::AddItem(std::string category,
   std::vector<Object> objects;
   std::vector<Object> obstacles;
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
+  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud, false);
   if (objects.size() != 1) {
     ROS_INFO_STREAM("Expected to find 1 object. Found " << objects.size());
   }
@@ -242,7 +252,7 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
   std::vector<Object> objects;
   std::vector<Object> obstacles;
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud);
+  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud, true);
 
   result->num_obstacles = obstacles.size();
   for (size_t i = 0; i < obstacles.size(); ++i) {

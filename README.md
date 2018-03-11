@@ -15,13 +15,9 @@ Recycle Backend
 * `roslaunch recycle classifier.launch`
 * `roslaunch recycle controller.launch`
 
-Recycle UI
-* `roslaunch recycle_ui classification_server.launch`
-* `project && cd recycle-ui/frontend && polymer serve -H 0.0.0.0`
-
 
 ## Frontend
-Requires: navigation launch and the ActionLibServer responsible for segmenting pointcloud to be running
+Run this on `mifune.cs.washington.edu`. Make sure to make sure all the others are running on `astro` and run `setrobot astro` before running the following commands.
 * `roslaunch recycle_ui classification_server.launch`
 * `project && cd recycle-ui/frontend && polymer serve -H 0.0.0.0`
 
