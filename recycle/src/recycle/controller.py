@@ -183,11 +183,11 @@ class Controller(object):
             rospy.loginfo(request)
             rospy.loginfo("Num requests left in q: {}".format(len(self._request_queue)))
 
-            # navigate to target pose TODO
-            # goal = MoveBaseGoal()
-            # goal.target_pose = request.target_pose
-            # self._move_base_client.send_goal(goal)
-            # self._move_base_client.wait_for_result()
+            # navigate to target pose
+            goal = MoveBaseGoal()
+            goal.target_pose = request.target_pose
+            self._move_base_client.send_goal(goal)
+            self._move_base_client.wait_for_result()
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
@@ -298,9 +298,6 @@ class Controller(object):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
             category = classifier_result.classifications[i]
-
-            # TODO
-            category = 'recycle'
 
             # DEBUG
             # self._pub_bin_markers()
