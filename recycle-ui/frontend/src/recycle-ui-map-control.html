@@ -26,6 +26,8 @@
         --paper-checkbox-checked-color: var(--primary-color);
         --paper-dialog-button-color: var(--primary-color);
         --control-width: 300px;
+        --recycle-color: #45aaf2;
+        --compost-color: #26de81;
         /*--paper-input-container-input-color: var(--primary-color);*/
       }
 
@@ -42,6 +44,30 @@
         min-width: 300px;
         overflow: scroll;
         position: relative;
+      }
+
+      .rest-name {
+        color: var(--recycle-color);
+      }
+
+      .bus-name {
+        color: var(--compost-color);
+      }
+
+      paper-radio-button.rest {
+        --paper-radio-button-checked-color: var(--recycle-color);
+        --paper-radio-button-checked-ink-color: var(--recycle-color);
+        --paper-radio-button-unchecked-color: var(--recycle-color);
+        --paper-radio-button-unchecked-ink-color: var(--recycle-color);
+        --paper-radio-button-label-color: var(--recycle-color);
+      }
+
+      paper-radio-button.bus {
+        --paper-radio-button-checked-color: var(--compost-color);
+        --paper-radio-button-checked-ink-color: var(--compost-color);
+        --paper-radio-button-unchecked-color: var(--compost-color);
+        --paper-radio-button-unchecked-ink-color: var(--compost-color);
+        --paper-radio-button-label-color: var(--compost-color);
       }
 
       #controls #pose-input paper-icon-button {
@@ -124,8 +150,8 @@
           <h2>Create Pose</h2>
           <paper-radio-group selected="{{actionSelected}}">
             Action at Pose:
-            <paper-radio-button name="bus">Bus</paper-radio-button>
-            <paper-radio-button name="rest">Rest</paper-radio-button>
+            <paper-radio-button class="bus" name="bus">Bus</paper-radio-button>
+            <paper-radio-button class="rest" name="rest">Rest</paper-radio-button>
           </paper-radio-group>
           <paper-input always-float-label id="pose-input" label="New Pose Name" value="{{poseNameInput}}">
             <paper-button on-tap="_handleCreate">Create</paper-button>

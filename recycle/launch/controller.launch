@@ -7,7 +7,10 @@
 
 	<param name="ramp_mesh_file" value="/home/team6/catkin_ws/src/cse481wi18/recycle/src/recycle/rampMesh.stl" />
 	<param name="flip_obstacles" value="true" />
-	<param name="table_extension" type="int" value="2" />
+	<param name="table_extension" type="double" value="1.5" />
+	<param name="do_navigation" type="bool" value="true" />
+
+	<param name="gripper_effort" type="int" value="60" />
 
 	<param name="move_request_topic" value="recycle/move_request" />
 	<param name="classify_action" value="recycle_classifier/classify" />

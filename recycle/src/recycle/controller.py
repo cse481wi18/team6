@@ -22,6 +22,7 @@ class Controller(object):
 
     # head.look_at(frame_id, x, y, z)
     LOOK_AT_TABLE = ('base_link', 0.7, 0.0, 0.75)
+    TABLE_HEIGHT_THRESH = 0.7
 
     GRIPPER_WIDTH = 0.10
     GRIPPER_BASE_OFFSET = 0.166 - 0.03  # offset between wrist_roll_link and the base of the gripper
@@ -54,7 +55,8 @@ class Controller(object):
     }
     # Dimensions of the cardboard ramps
     RAMP_WIDTH = 0.14
-    RAMP_HEIGHT = 0.22
+    # RAMP_HEIGHT = 0.22
+    RAMP_HEIGHT = BIN_WIDTH
 
     PRE_BIN_POSES = {
         'compost': {'x': 0.3, 'y': -0.36, 'z': 1.05},
@@ -64,6 +66,7 @@ class Controller(object):
 
     def __init__(self, move_request_topic, classify_action):
         self.RAMP_MESH_FILE = rospy.get_param('ramp_mesh_file', "/home/team6/catkin_ws/src/cse481wi18/recycle/src/recycle/rampMesh.stl")
+        self.GRIPPER_EFFORT = rospy.get_param('gripper_effort', 70)
         self._request_queue = []
         self._move_summary = []
         # moveit_python planning scene is STUPID. Once you removed an
@@ -132,14 +135,29 @@ class Controller(object):
         for category in self.BIN_POSES:
             rospy.loginfo('add bin obstacle: {}'.format(category))
             # the bin itself
-            name = category + "_bin"
-            self._planning_scene.attachBox(name,
+            bin_name = category + "_bin"
+            self._planning_scene.attachBox(bin_name,
                                            self.BIN_WIDTH, self.BIN_WIDTH, self.BIN_WIDTH,
                                            self.BIN_POSES[category]['x'],
                                            self.BIN_POSES[category]['y'],
                                            self.BIN_POSES[category]['z'] - self.BIN_WIDTH/2.0,
                                            frame_attached_to,
                                            frames_okay_to_collide_with)
+            # Just boxes
+            ramp_name = category + "_ramp"
+            ramp_x = self.BIN_POSES[category]['x'] + self.BIN_WIDTH/2.0 + self.RAMP_WIDTH/2.0
+            ramp_z = self.BIN_POSES[category]['z'] - self.BIN_WIDTH + self.RAMP_HEIGHT/2.0
+            self._planning_scene.attachBox(ramp_name,
+                                           self.RAMP_WIDTH,
+                                           self.BIN_WIDTH,
+                                           self.RAMP_HEIGHT,
+                                           ramp_x,
+                                           self.BIN_POSES[category]['y'],
+                                           ramp_z,
+                                           frame_attached_to,
+                                           frames_okay_to_collide_with)
+
+            # MESH
             # the cardboard ramps
             # name = category + "_ramp"
             # ramp_pose = Pose()
@@ -166,10 +184,12 @@ class Controller(object):
         for category in self.BIN_POSES:
             self._planning_scene.removeAttachedObject(category + "_bin", wait=True)
             self._planning_scene.removeAttachedObject(category + "_ramp", wait=True)
+            self._planning_scene.removeCollisionObject(category + "_bin", wait=True)
+            self._planning_scene.removeCollisionObject(category + "_ramp", wait=True)
 
         for i in range(self._attached_i):
-            self._planning_scene.removeAttachedObject("object_{}".format(i), wait=True)
-            self._planning_scene.removeCollisionObject("object_{}".format(i), wait=True)
+            self._planning_scene.removeAttachedObject("attached_object_{}".format(i), wait=True)
+            self._planning_scene.removeCollisionObject("attached_object_{}".format(i), wait=True)
 
 
     def start(self):
@@ -184,24 +204,34 @@ class Controller(object):
             rospy.loginfo("Num requests left in q: {}".format(len(self._request_queue)))
 
             # navigate to target pose
-            goal = MoveBaseGoal()
-            goal.target_pose = request.target_pose
-            self._move_base_client.send_goal(goal)
-            self._move_base_client.wait_for_result()
+            do_navigation = rospy.get_param("do_navigation", True)
+            if do_navigation:
+                rospy.loginfo("Navigating..")
+                goal = MoveBaseGoal()
+                goal.target_pose = request.target_pose
+                self._move_base_client.send_goal(goal)
+                self._move_base_client.wait_for_result()
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
             if request.action == "bus":
                 self._head.look_at(*self.LOOK_AT_TABLE)
-                rospy.sleep(1) # TODO
+                rospy.sleep(2) # TODO
 
                 classifier_result = self._classify_pointcloud()
 
-                # add obstacles to PlanningScene for the arm
-                self._add_obstacles(classifier_result)
+                if classifier_result:
+                    # add obstacles to PlanningScene for the arm
+                    if self._add_env_obstacles(classifier_result):
+                        # add objects as obstacles on the table before bussing
+                        self._add_object_obstacles(classifier_result)
 
-                # now, bus the classified objects
-                self._bus_objects(classifier_result)
+                        # now, bus the classified objects
+                        self._bus_objects(classifier_result)
+
+                        # remove the obstacles now that we are done bussing
+                        self._remove_env_obstacles()
+                        self._remove_object_obstacles(classifier_result)
 
             elif request.action == "rest":
                 pass
@@ -217,19 +247,24 @@ class Controller(object):
         self._classify_client.wait_for_result()
         classifier_result = self._classify_client.get_result()
 
-        rospy.loginfo("Got results from classifier:")
-        rospy.loginfo(classifier_result)
+        if classifier_result:
+            rospy.loginfo("Got results from classifier:")
+            rospy.loginfo(classifier_result)
+        else:
+            rospy.logerr("Got None from classifier")
 
         return classifier_result
 
-
-    def _add_obstacles(self, classifier_result):
-        rospy.loginfo("ADD TABLE")
-        # Clearing all the previous obstacles in the planning scene
+    def _remove_env_obstacles(self):
+        rospy.loginfo("Removing env obstacles")
         for i in range(self._num_prev_obstacles):
             name = 'obstacle_{}'.format(i)
             self._planning_scene.removeCollisionObject(name, wait=True)
 
+    def _add_env_obstacles(self, classifier_result):
+        rospy.loginfo("ADD TABLE")
+        # Clearing all the previous obstacles in the planning scene
+        self._remove_env_obstacles()
         self._num_prev_obstacles = classifier_result.num_obstacles
 
         for i in range(classifier_result.num_obstacles):
@@ -263,33 +298,30 @@ class Controller(object):
                                         obstacle_dim.z / 2.0, # Hacky fix
                                         wait=True)
 
-            # # TODO:
-            # # Note for Ariel:
-            # # Perception is going to always return the dimensions in the true order,
-            # # i.e. x is always x and y is always y.
-            # # In simulation, flipping the dimensions here results in the correct behaviour.
-            # # I will test it on the real robot tomorrow morning to see if it has the same
-            # # behaviour irl as well.
+            if obstacle_pose.pose.position.z + obstacle_dim.z/2.0 < self.TABLE_HEIGHT_THRESH:
+                rospy.logerr("Table obstacle NOT tall enough!! Aborting!!")
+                return False
 
-            # # obstacle_dim.y *= 2
-            # obstacle_dim.x *= 2 # Doubling the x dimension here since we're flipping the dimensions
-            # # print("TABLE LOCATION")
-            # # print([obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
-            # #     obstacle_pose.pose.position.x, obstacle_pose.pose.position.y, obstacle_pose.pose.position.z])
+        return True
 
-            # # TODO: The parameters might need to be changed when we stop using the mock point cloud.
-            # # TODO: had to flip the x and y for some reason
-            # self._planning_scene.addBox('obstalce_' + str(i),
-            #                             obstacle_dim.y,  # TODO hacky
-            #                             obstacle_dim.x,
-            #                             obstacle_dim.z,
-            #                             obstacle_pose.pose.position.x, # TODO
-            #                             obstacle_pose.pose.position.y,
-            #                             obstacle_dim.z / 2.0, # Hacky fix
-            #                             wait=True)
+    def _remove_object_obstacles(self, classifier_result):
+        rospy.loginfo("Removing all object obstacles")
+        for i in range(classifier_result.num_objects):
+            name = 'collision_object_{}'.format(i)
+            self._planning_scene.removeCollisionObject(name, wait=True)
 
-        rospy.loginfo(self._planning_scene.getKnownCollisionObjects())
-
+    def _add_object_obstacles(self, classifier_result):
+        rospy.loginfo("Adding all objects as obstacles")
+        for i in range(classifier_result.num_objects):
+            obj_pose = classifier_result.object_poses[i]
+            obj_dim = classifier_result.object_dimensions[i]
+            name = 'collision_object_{}'.format(i)
+            self._planning_scene.addBox(name,
+                                        obj_dim.x, obj_dim.y, obj_dim.z,
+                                        obj_pose.pose.position.x,
+                                        obj_pose.pose.position.y,
+                                        obj_pose.pose.position.z,
+                                        wait=True)
 
     def _bus_objects(self, classifier_result):
         rospy.loginfo("Start bussing objects...")
@@ -303,7 +335,7 @@ class Controller(object):
             # self._pub_bin_markers()
             self._pub_object_marker(i, category, obj_posestamped.pose, obj_dim)
 
-            pickedup = self._pickup_object(obj_posestamped, obj_dim, category)
+            pickedup = self._pickup_object(i, obj_posestamped, obj_dim, category)
             if pickedup:
                 rospy.loginfo("Picked up object {}: {}".format(i, category))
             else:
@@ -312,7 +344,6 @@ class Controller(object):
 
 
         # TODO put arm back to 'home position'
-        # TODO remove table obstacle
 
 
     # Attempts to align gripper to object's shortest dimension
@@ -341,7 +372,7 @@ class Controller(object):
 
     # Given the target object's pose and dimension, and the target
     # bin's pose, pick up object and drop in the bin.
-    def _pickup_object(self, obj_posestamped, obj_dim, category):
+    def _pickup_object(self, i, obj_posestamped, obj_dim, category):
         # -1. make sure gripper is initially open
         self._gripper.open()
 
@@ -374,6 +405,10 @@ class Controller(object):
             rospy.logwarn("Cannot align gripper to shortest dimension :(")
             return False
 
+        # 2.5 Remove object as collision obstacle right before grasping
+        # TODO add it back if didnt pick up
+        self._planning_scene.removeCollisionObject("collision_object_{}".format(i), wait=True)
+
         # 3. Move down to grasp pose:
         # max-z(gripper base X cm above the object, fingertip Ycm above table)
         gripper_goal.pose.position.z = max(obj_top_z + self.GRIPPER_BASE_OFFSET + self.GRASP_DIST,
@@ -385,7 +420,7 @@ class Controller(object):
         grasp_pose = copy.deepcopy(gripper_goal.pose)
 
         # 4. Grip object and attach as obstacle
-        self._gripper.close()
+        self._gripper.close(max_effort=self.GRIPPER_EFFORT)
         self._attach_object_obstacle(obj_dim)
 
         # 5. Move up to post-grasp pose: Xcm back up
@@ -460,7 +495,7 @@ class Controller(object):
     def _attach_object_obstacle(self, obj_dim):
         # TODO figure out the correct orientation
         rospy.loginfo("ATTACH")
-        name = 'object_{}'.format(self._attached_i)
+        name = 'attached_object_{}'.format(self._attached_i)
         self._planning_scene.removeAttachedObject(name, wait=True)
 
         frame_attached_to = 'gripper_link'
@@ -485,7 +520,7 @@ class Controller(object):
 
     def _detach_object_obstacle(self):
         rospy.loginfo("DETACH")
-        name = 'object_{}'.format(self._attached_i)
+        name = 'attached_object_{}'.format(self._attached_i)
         self._planning_scene.removeAttachedObject(name, wait=True)
         self._planning_scene.removeCollisionObject(name, wait=True)
         self._attached_i += 1
