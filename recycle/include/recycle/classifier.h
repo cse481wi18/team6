@@ -6,6 +6,7 @@
 #include <actionlib/server/simple_action_server.h>
 #include "pcl/common/common.h"
 
+#include "tf/transform_listener.h"
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_types.h>
 #include <pcl/PCLPointCloud2.h>

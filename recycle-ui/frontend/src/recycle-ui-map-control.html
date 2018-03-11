@@ -203,15 +203,16 @@
 
       ready() {
         super.ready();
+        this.hostname = window.location.hostname;
         this.addEventListener('poseEvent', this._handlePoseEvent);
         var config = {
           "globalOptions": {
             "background": "#111111",
             "colladaLoader": "collada2",
-            "colladaServer": "http://localhost:8001/",
+            "colladaServer": "http://" + this.hostname + ":8001/",
             "fixedFrame": "/map",
-            "url": "ws://localhost:9090",
-            "videoServer": "http://localhost:9999"
+            "url": "ws://" + this.hostname + ":9090",
+            "videoServer": "http://" + this.hostname + ":9999"
           },
           "hideSidebar": false,
           "displays": [
