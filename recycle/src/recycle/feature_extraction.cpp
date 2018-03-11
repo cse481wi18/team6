@@ -10,8 +10,8 @@ namespace recycle {
   void ExtractColorFeatures(const Object& object,
                           recycle_msgs::ObjectFeatures* features) {
     //Determines weight given to color vs size in evaluating nearest neighbor
-    double weight;
-    ros::param::param("color_weight", weight, 1.0);
+    // double weight;
+    // ros::param::param("color_weight", weight, 1.0);
 
     std::vector<double> color_features;
     color_features.resize(3375); //15 buckets rather than 5, 15^3 = 3375
@@ -43,8 +43,8 @@ namespace recycle {
   void ExtractSizeFeatures(const Object& object,
                          recycle_msgs::ObjectFeatures* features) {
     //Determines weight given to size vs color in evaluating nearest neighbor
-    double weight;
-    ros::param::param("size_weight", weight, 2.0);
+    // double weight;
+    // ros::param::param("size_weight", weight, 2.0);
     
     // x is always the smallest dimension, y is always the second smallest and
     // z is always the largest. This accounts for any orientation of the item.
@@ -81,10 +81,10 @@ namespace recycle {
     }
     // double x_dim = 
     features->names.push_back("box_dim_x");
-    features->values.push_back(weight * x_dim);
+    features->values.push_back(x_dim);
     features->names.push_back("box_dim_y");
-    features->values.push_back(weight * y_dim);
+    features->values.push_back(y_dim);
     features->names.push_back("box_dim_z");
-    features->values.push_back(weight * z_dim);
+    features->values.push_back(z_dim);
   }//ExtractSizeFeatures
 }  // namespace recycle

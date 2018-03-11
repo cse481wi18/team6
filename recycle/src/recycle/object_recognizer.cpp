@@ -25,9 +25,19 @@ namespace {
                            const std::vector<double>& v2) {
       // TODO: implement
     double distance = 0.0;
+    double size_weight;
+    ros::param::param("size_weight", size_weight, 2.0);
+    double color_weight;
+    ros::param::param("color_weight", color_weight, 1.0);
     int n = v1.size();
     for (int i = 0; i < n; i++) {
-      distance += std::pow(v1.at(i) - v2.at(i), 2);
+      double dist = std::pow(v1.at(i) - v2.at(i), 2);
+      if (i < 3) {
+        dist *= size_weight;
+      } else {
+        dist *= color_weight;
+      }
+      distance += dist;
     }
     return std::sqrt(distance);
   }

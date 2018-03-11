@@ -308,4 +308,27 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     ac->sendGoal(goal);
   }
 }
+
+void Segmenter::ClassifyCloud(PointCloudC::Ptr filtered) {
+
+  PointCloudC::Ptr cloud(new PointCloudC());
+  std::vector<int> index;
+  pcl::removeNaNFromPointCloud(*filtered, *cloud, index);  
+
+  std::vector<Object> objects;
+  std::vector<Object> obstacles;
+  PointCloudC::Ptr above_surface_cloud(new PointCloudC);
+  Segmenter::SegmentTabletopScene(cloud, &objects, &obstacles, above_surface_cloud, true);
+
+  ROS_INFO_STREAM("Found " << objects.size() << " objects");
+  for (size_t i = 0; i < objects.size(); ++i) {
+    Object& object = objects[i];
+    std::string name;
+    double confidence;
+    recognizer_.Recognize(object, &name, &confidence);
+    confidence = round(1000 * confidence) / 1000;
+    ROS_INFO_STREAM("Object is classified as " << name);
+    ROS_INFO_STREAM("Confidence is " << confidence);
+  }
+}
 }  // namespace recycle
