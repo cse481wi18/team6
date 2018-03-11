@@ -10,6 +10,9 @@ namespace recycle {
   class Cropper {
    public:
     Cropper();
+    Cropper(const ros::Publisher& pub);
     PointCloudC::Ptr Crop(const PointCloudC::Ptr cloud);
+   private:
+    ros::Publisher pub_;
   };
 }

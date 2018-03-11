@@ -173,7 +173,10 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   
   extract.setNegative(true);
   extract.filter(*above_surface_cloud);
-
+  sensor_msgs::PointCloud2 msg_out;
+  pcl::toROSMsg(*above_surface_cloud, msg_out);
+  above_table_pub_.publish(msg_out); 
+  
   // bounding box for objects
   for (size_t i = 0; i < object_indices.size(); ++i) {
     // Reify indices into a point cloud of the object.
@@ -200,11 +203,12 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   }
 }
 
-Segmenter::Segmenter(const ObjectRecognizer& recognizer) : recognizer_(recognizer) {
+Segmenter::Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer) : above_table_pub_(above_table_pub),
+recognizer_(recognizer) {
   CONFIDENCE_THRESHOLD = 0.5;
 }
 
-Segmenter::Segmenter()  {  
+Segmenter::Segmenter(ros::Publisher above_table_pub) : above_table_pub_(above_table_pub) {  
   CONFIDENCE_THRESHOLD = 0.5;
 }
 

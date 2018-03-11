@@ -12,6 +12,8 @@ namespace recycle {
     classifier_action_name_(classify_name),
     add_item_action_name_(add_item_name),
     logger_name_(logger_name) {
+      crop_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("cropped_cloud", 1, true);
+      above_table_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("above_table_cloud", 1, true);
       classifier_as_.start();
       add_item_as_.start();
       logging_ac_.waitForServer();
@@ -28,7 +30,7 @@ namespace recycle {
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
-    Cropper cropper;
+    Cropper cropper(crop_pub_);
     PointCloudC::Ptr cropped = cropper.Crop(cloud);
     Downsampler downsampler;
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
@@ -36,7 +38,7 @@ namespace recycle {
     recycle::ObjectRecognizer recognizer;
     recognizer.LoadData(database_path_);
     ROS_INFO("Segmenting");
-    recycle::Segmenter segmenter(recognizer);
+    recycle::Segmenter segmenter(above_table_pub_, recognizer);
     segmenter.SegmentAndClassify(downsampled, &result, &logging_ac_);
     classifier_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
@@ -52,12 +54,12 @@ namespace recycle {
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
-    Cropper cropper;
+    Cropper cropper(crop_pub_);
     PointCloudC::Ptr cropped = cropper.Crop(cloud);
     Downsampler downsampler;
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
     ROS_INFO("Segmenting");
-    recycle::Segmenter segmenter;
+    recycle::Segmenter segmenter(above_table_pub_);
     segmenter.AddItem(goal->category, downsampled, &result);
 
     add_item_as_.setSucceeded(result);

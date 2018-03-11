@@ -25,9 +25,9 @@ typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
 
 class Segmenter {
  public:
-  Segmenter(const ObjectRecognizer& recognizer);
+  Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer);
 
-  Segmenter();
+  Segmenter(ros::Publisher above_table_pub);
   
   // Does a complete tabletop segmentation pipeline.
   //
@@ -43,13 +43,14 @@ class Segmenter {
   void SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                           recycle_msgs::ClassifyResult* result,
                           actionlib::SimpleActionClient<recycle_msgs::DbLogAction>* ac);
-  
+
   void AddItem(std::string category, 
               PointCloudC::Ptr cloud_unfiltered, 
               recycle_msgs::AddItemResult* result);
 
  private:
   recycle::Saver saver_;
+  ros::Publisher above_table_pub_;
   ObjectRecognizer recognizer_;
   int CONFIDENCE_THRESHOLD;
 

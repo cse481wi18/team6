@@ -3,7 +3,7 @@
 
 namespace recycle {
   Cropper::Cropper() {}
-
+  Cropper::Cropper(const ros::Publisher& pub) :pub_(pub){}
   PointCloudC::Ptr Cropper::Crop(const PointCloudC::Ptr cloud) {
     
     ROS_INFO("Got point cloud with %ld points", cloud->size());
@@ -25,6 +25,10 @@ namespace recycle {
     crop.filter(*cropped_cloud);
     ROS_INFO("Cropped to %ld points", cropped_cloud->size());
 
+    sensor_msgs::PointCloud2 msg_out;
+    pcl::toROSMsg(*cropped_cloud, msg_out);
+    pub_.publish(msg_out);
+    
     return cropped_cloud;
   }
 }

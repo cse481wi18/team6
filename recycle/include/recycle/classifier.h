@@ -36,6 +36,8 @@ namespace recycle {
 
     private:
       ros::NodeHandle nh_;
+      ros::Publisher crop_pub_;
+      ros::Publisher above_table_pub_;
       std::string database_path_;
       std::string classifier_action_name_;
       std::string add_item_action_name_;

@@ -83,7 +83,12 @@ int main(int argc, char** argv) {
   recycle::ObjectRecognizer dummy_recognizer;
 
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);
-  recycle::Segmenter segmenter(dummy_recognizer);
+  ros::NodeHandle nh;
+
+  // Cropper
+  ros::Publisher above =
+      nh.advertise<sensor_msgs::PointCloud2>("above_cloud", 1, true);
+  recycle::Segmenter segmenter(above, dummy_recognizer);
   segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud, true);
 
   if (objects.size() != 1) {
