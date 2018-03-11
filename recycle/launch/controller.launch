@@ -3,10 +3,10 @@
 	<!-- <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" /> -->
 
 	<!-- launch moveit for arm -->
-	<!-- <include file="$(find fetch_api)/launch/move_group.launch">
-	</include> -->
+	<include file="$(find fetch_api)/launch/move_group.launch" />
 
 	<param name="move_request_topic" value="recycle/move_request" />
+	<param name="flip_obstacles" value="true" />
 	<param name="classify_action" value="recycle_classifier/classify" />
 	<node pkg="recycle" type="controller_main.py" name="recycle_controller" output="screen" />
 </launch>
