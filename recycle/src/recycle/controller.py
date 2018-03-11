@@ -161,6 +161,7 @@ class Controller(object):
             goal.target_pose = request.target_pose
             self._move_base_client.send_goal(goal)
             self._move_base_client.wait_for_result()
+            rospy.sleep(3)
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
