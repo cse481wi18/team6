@@ -121,7 +121,7 @@ class Controller(object):
         frames_okay_to_collide_with = ['base_link', 'laser_link']
 
         for category in self.BIN_POSES:
-            rospy.logerr('add bin obstacle: {}'.format(category))
+            rospy.loginfo('add bin obstacle: {}'.format(category))
             name = category + "_bin"
             self._planning_scene.attachBox(name,
                                            self.BIN_WIDTH, self.BIN_WIDTH, self.BIN_WIDTH,
@@ -192,26 +192,27 @@ class Controller(object):
         self._classify_client.wait_for_result()
         classifier_result = self._classify_client.get_result()
 
-        rospy.loginfo("Got results from classifier.")
+        rospy.loginfo("Got results from classifier:")
+        rospy.loginfo(classifier_result)
+
         return classifier_result
 
 
     def _add_obstacles(self, classifier_result):
-        rospy.logerr("ADD TABLE")
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
+        rospy.loginfo("ADD TABLE")
         # Clearing all the previous obstacles in the planning scene
         for i in range(self._num_prev_obstacles):
             name = 'obstacle_{}'.format(i)
-            rospy.logerr('removing {}'.format(name))
             self._planning_scene.removeCollisionObject(name, wait=True)
-
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
         self._num_prev_obstacles = classifier_result.num_obstacles
 
         for i in range(classifier_result.num_obstacles):
             obstacle_pose = classifier_result.obstacle_poses[i]
             obstacle_dim = classifier_result.obstacle_dimensions[i]
+
+            rospy.loginfo(obstacle_pose)
+            rospy.loginfo(obstacle_dim)
 
             # print("TABLE LOCATION")
             # print([obstacle_dim.x, obstacle_dim.y, obstacle_dim.z,
@@ -228,7 +229,7 @@ class Controller(object):
                                         obstacle_dim.z / 2.0, # Hacky fix
                                         wait=True)
 
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
+        rospy.loginfo(self._planning_scene.getKnownCollisionObjects())
 
 
     def _bus_objects(self, classifier_result):
@@ -393,15 +394,9 @@ class Controller(object):
 
     def _attach_object_obstacle(self, obj_dim):
         # TODO figure out the correct orientation
-        rospy.logerr("ATTACH")
-        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
-
+        rospy.loginfo("ATTACH")
         name = 'object_{}'.format(self._attached_i)
         self._planning_scene.removeAttachedObject(name, wait=True)
-
-        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
@@ -422,20 +417,13 @@ class Controller(object):
                                        touch_links=frames_okay_to_collide_with,
                                        wait=True)
 
-        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
-
 
     def _detach_object_obstacle(self):
-        rospy.logerr("DETACH")
-        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
+        rospy.loginfo("DETACH")
         name = 'object_{}'.format(self._attached_i)
         self._planning_scene.removeAttachedObject(name, wait=True)
         self._planning_scene.removeCollisionObject(name, wait=True)
         self._attached_i += 1
-        rospy.logerr(self._planning_scene.getKnownAttachedObjects())
-        rospy.logerr(self._planning_scene.getKnownCollisionObjects())
 
 
 
@@ -457,6 +445,8 @@ class Controller(object):
         marker.scale = obj_dim
         marker.color.g = 1
         marker.color.a = 0.3
+
+        rospy.loginfo(marker)
 
         self._marker_pub.publish(marker)
 
@@ -480,4 +470,3 @@ class Controller(object):
             marker.color.a = 0.5
             self._marker_pub.publish(marker)
             i += 1
-            rospy.logerr(marker)

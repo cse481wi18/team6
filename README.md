@@ -13,7 +13,7 @@ Libraries
 * `roslaunch fetch_api move_group.launch`
 
 Recycle Backend
-* `rosrun recycle logger_server.launch` (`<node>`)
+* `rosrun recycle logger_server.py`
 * `roslaunch recycle classifier.launch`
 * `roslaunch recycle controller.launch`
 * `roslaunch recycle_ui classification_server.launch`
