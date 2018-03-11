@@ -145,7 +145,7 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
 
   sensor_msgs::PointCloud2 msg_out;
   pcl::toROSMsg(*table_cloud, msg_out);
-  above_table_pub_.publish(msg_out); 
+  table_pub_.publish(msg_out); 
 
   //Use simple_grasping instead of our own function
   PointCloudC::Ptr extract_out(new PointCloudC());
@@ -156,7 +156,7 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   FitBox(*table_cloud, coeff, *extract_out, table_shape, table_pose);
   
   double table_obstacle_padding;
-  ros::param::param("table_obstacle_padding", table_obstacle_padding, 0.04);
+  ros::param::param("table_obstacle_padding", table_obstacle_padding, 0.01);
 
   recycle::Object *table = new recycle::Object;
   ROS_INFO("%s", table_cloud->header.frame_id.c_str());
@@ -179,9 +179,9 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   
   extract.setNegative(true);
   extract.filter(*above_surface_cloud);
-  // sensor_msgs::PointCloud2 msg_out;
-  // pcl::toROSMsg(*above_surface_cloud, msg_out);
-  // above_table_pub_.publish(msg_out); 
+  sensor_msgs::PointCloud2 msg_out_two;
+  pcl::toROSMsg(*above_surface_cloud, msg_out_two);
+  above_table_pub_.publish(msg_out_two); 
 
   // bounding box for objects
   for (size_t i = 0; i < object_indices.size(); ++i) {
@@ -209,12 +209,17 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   }
 }
 
-Segmenter::Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer) 
-  : above_table_pub_(above_table_pub),
+Segmenter::Segmenter(ros::Publisher table_pub, 
+  ros::Publisher above_table_pub, 
+  const ObjectRecognizer& recognizer) 
+  : table_pub_(table_pub), 
+    above_table_pub_(above_table_pub),
     recognizer_(recognizer) {}
 
-Segmenter::Segmenter(ros::Publisher above_table_pub) 
-  : above_table_pub_(above_table_pub) {}
+Segmenter::Segmenter(ros::Publisher table_pub,
+  ros::Publisher above_table_pub) 
+  : table_pub_(table_pub),
+    above_table_pub_(above_table_pub) {}
 
 void Segmenter::AddItem(std::string category,
                         PointCloudC::Ptr cloud_unfiltered, 
@@ -222,6 +227,11 @@ void Segmenter::AddItem(std::string category,
   PointCloudC::Ptr cloud(new PointCloudC());
   std::vector<int> index;
   pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
+
+  if (cloud->size() == 0) {
+    ROS_ERROR("No points in the point cloud. Aborting segmentation");
+    return;
+  }
 
   std::vector<Object> objects;
   std::vector<Object> obstacles;
@@ -256,6 +266,11 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
   PointCloudC::Ptr cloud(new PointCloudC());
   std::vector<int> index;
   pcl::removeNaNFromPointCloud(*cloud_unfiltered, *cloud, index);  
+  
+  if (cloud->size() == 0) {
+    ROS_ERROR("No points in the point cloud. Aborting segmentation");
+    return;
+  }
 
   std::vector<Object> objects;
   std::vector<Object> obstacles;
@@ -310,11 +325,14 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
 }
 
 void Segmenter::ClassifyCloud(PointCloudC::Ptr filtered) {
-
   PointCloudC::Ptr cloud(new PointCloudC());
   std::vector<int> index;
   pcl::removeNaNFromPointCloud(*filtered, *cloud, index);  
 
+  if (cloud->size() == 0) {
+    ROS_ERROR("No points in the point cloud. Aborting segmentation");
+    return;
+  }
   std::vector<Object> objects;
   std::vector<Object> obstacles;
   PointCloudC::Ptr above_surface_cloud(new PointCloudC);

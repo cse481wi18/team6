@@ -43,21 +43,10 @@ namespace {
   }
 } // anonymous namespace
 
-// log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-//   predicted_category VARCHAR(255),
-//   actual_category VARCHAR(255),
-//   image_file_path VARCHAR(255),
-//   pointcloud_file_path VARCHAR(255),
-//   feature_file_path VARCHAR(255)
-
-
 int SQLCallback(void *data, int argc, char **argv, char **azColName) {
-  // printf("%s = %s\n", azColName[0], argv[0] ? argv[0] : "NULL");
-
-  // ROS_INFO_STREAM("INSIDE CALLBACK ADDRESS: " << dataset_point);
   std::string type = argv[0];
   std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
-  // ROS_INFO_STREAM("Loading " << argv[1]);
+
   rosbag::Bag bag;
   bag.open(argv[1], rosbag::bagmode::Read);
   std::vector<std::string> topics;
@@ -67,21 +56,15 @@ int SQLCallback(void *data, int argc, char **argv, char **azColName) {
   for (rosbag::View::iterator it = view.begin(); it != view.end(); ++it) {
     ObjectFeatures::Ptr fp = it->instantiate<ObjectFeatures>();
     if (fp != NULL) {
-      // ROS_INFO_STREAM("ITEM HAS THE DATA " << fp->names[0]);
-      // ROS_INFO_STREAM("Original type is " << fp->classification);
       fp->classification = type;
-      // ROS_INFO_STREAM("New type is " << fp->classification);
       dataset_point->push_back(*fp);
     }
   }
-  // ROS_INFO_STREAM("SIZE NOW " << dataset_point->size());
   bag.close();
   return 0;
 }
 
 int ObjectRecognizer::LoadData(const std::string& database_path) {
-  // ROS_INFO_STREAM("OUTSIDE ADDRESS: " << &dataset_);
-
   sqlite3 *db;
   char *zErrMsg = 0;
   int rc = sqlite3_open(database_path.c_str(), &db);

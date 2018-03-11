@@ -7,7 +7,9 @@ namespace recycle {
   class Downsampler {
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
     public:
-      Downsampler();
+      Downsampler(ros::Publisher pub);
       PointCloudC::Ptr Downsample(PointCloudC::Ptr cloud);
+    private:
+      ros::Publisher pub_;
   };
 }

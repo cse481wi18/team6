@@ -34,9 +34,10 @@ int main(int argc, char** argv) {
   pcl::fromROSMsg(cloud_out, *cloud);
   ros::NodeHandle nh;
   ros::Publisher crop_pub_ = nh.advertise<sensor_msgs::PointCloud2>("cropped_cloud", 1, true);
+  ros::Publisher crop_pub_2 = nh.advertise<sensor_msgs::PointCloud2>("cropped_cloud2", 1, true);
   recycle::ObjectRecognizer rec;
   rec.LoadData("/home/team6/catkin_ws/src/cse481wi18/database/recycle.db");
-  recycle::Segmenter segmenter(crop_pub_, rec);
+  recycle::Segmenter segmenter(crop_pub_2, crop_pub_, rec);
   segmenter.ClassifyCloud(cloud);
 
   ros::spin();

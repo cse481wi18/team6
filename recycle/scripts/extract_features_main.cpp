@@ -86,9 +86,11 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh;
 
   // Cropper
+  ros::Publisher table =
+      nh.advertise<sensor_msgs::PointCloud2>("table_cloud", 1, true);
   ros::Publisher above =
       nh.advertise<sensor_msgs::PointCloud2>("above_cloud", 1, true);
-  recycle::Segmenter segmenter(above, dummy_recognizer);
+  recycle::Segmenter segmenter(table, above, dummy_recognizer);
   segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud, true);
 
   if (objects.size() != 1) {

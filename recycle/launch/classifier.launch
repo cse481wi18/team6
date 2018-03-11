@@ -9,15 +9,16 @@
 	<param name="ec_max_cluster_size" value="7500" />
 	<param name="distance_above_plane" value="0.01" />
 
-	<param name="table_obstacle_padding" value="0.10" />
+	<param name="table_obstacle_padding" value="0.005" />
 
 	<!-- Cropping -->
 	<param name="crop_min_x" value="-1" />
-	<param name="crop_max_x" value="1.2" />
 	<param name="crop_min_y" value="-0.4" />
-	<param name="crop_max_y" value="0.5" />
 	<param name="crop_min_z" value="-1" />
-	<param name="crop_max_z" value="1" />
+
+	<param name="crop_max_x" value="1.2" />
+	<param name="crop_max_z" value="1.75" />
+	<param name="crop_max_y" value="0.5" />
 	
 	<!-- Classification-->
 	<param name="landfill_confidence_threshold" value="0.4" />	

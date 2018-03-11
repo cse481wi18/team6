@@ -25,9 +25,10 @@ typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
 
 class Segmenter {
  public:
-  Segmenter(ros::Publisher above_table_pub, const ObjectRecognizer& recognizer);
+  Segmenter(ros::Publisher table_pub, 
+    ros::Publisher above_table_pub, const ObjectRecognizer& recognizer);
 
-  Segmenter(ros::Publisher above_table_pub);
+  Segmenter(ros::Publisher table_pub, ros::Publisher above_table_pub);
   
   // Does a complete tabletop segmentation pipeline.
   //
@@ -52,6 +53,7 @@ class Segmenter {
 
  private:
   recycle::Saver saver_;
+  ros::Publisher table_pub_;
   ros::Publisher above_table_pub_;
   ObjectRecognizer recognizer_;
 
