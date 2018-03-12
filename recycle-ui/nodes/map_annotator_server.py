@@ -107,19 +107,19 @@ class MapPoses:
         arrow_marker.color.b = 0.5
         arrow_marker.color.a = 1.0
 
-        color = (38, 222, 129) if action.kind == 'bus' else (69, 170, 242)
-        label_marker = Marker()
-        label_marker.type = Marker.TEXT_VIEW_FACING
-        label_marker.pose.orientation.w = 1
-        label_marker.pose.position.z = .2
-        label_marker.scale.x = .3
-        label_marker.scale.y = .3
-        label_marker.scale.z = .3
-        label_marker.color.r = float(color[0]) / 255
-        label_marker.color.g = float(color[1]) / 255
-        label_marker.color.b = float(color[2]) / 255
-        label_marker.color.a = 1.0
-        label_marker.text = action.name
+        #color = (38, 222, 129) if action.kind == 'bus' else (69, 170, 242)
+        #label_marker = Marker()
+        #label_marker.type = Marker.TEXT_VIEW_FACING
+        #label_marker.pose.orientation.w = 1
+        #label_marker.pose.position.z = .2
+        #label_marker.scale.x = .3
+        #label_marker.scale.y = .3
+        #label_marker.scale.z = .3
+        #label_marker.color.r = float(color[0]) / 255
+        #label_marker.color.g = float(color[1]) / 255
+        #label_marker.color.b = float(color[2]) / 255
+        #label_marker.color.a = 1.0
+        #label_marker.text = action.name
 
         button_control = InteractiveMarkerControl()
         button_control.orientation.w = 1
@@ -129,7 +129,7 @@ class MapPoses:
         button_control.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
         button_control.always_visible = True
         button_control.markers.append(arrow_marker)
-        button_control.markers.append(label_marker)
+        #button_control.markers.append(label_marker)
         int_marker.controls.append(button_control)
 
         self._marker_server.insert(int_marker, self._handle_click)

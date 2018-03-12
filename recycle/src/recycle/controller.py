@@ -126,9 +126,6 @@ class Controller(object):
 
 
     def _attach_bin_obstacles(self):
-        for category in self.BIN_POSES:
-            self._planning_scene.removeAttachedObject(category + "_bin")
-
         frame_attached_to = 'base_link'
         frames_okay_to_collide_with = ['base_link', 'laser_link']
 
@@ -263,8 +260,6 @@ class Controller(object):
 
     def _add_env_obstacles(self, classifier_result):
         rospy.loginfo("ADD TABLE")
-        # Clearing all the previous obstacles in the planning scene
-        self._remove_env_obstacles()
         self._num_prev_obstacles = classifier_result.num_obstacles
 
         for i in range(classifier_result.num_obstacles):
@@ -276,7 +271,6 @@ class Controller(object):
 
             flip_obstacles = rospy.has_param('flip_obstacles') and rospy.get_param('flip_obstacles')
             table_extension = rospy.get_param('table_extension', 2)
-            rospy.logerr(flip_obstacles)
             if flip_obstacles:
                 obstacle_dim.x *= table_extension
                 self._planning_scene.addBox('obstalce_' + str(i),
@@ -285,7 +279,7 @@ class Controller(object):
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x,
                                         obstacle_pose.pose.position.y,
-                                        obstacle_dim.z / 2.0, # Hacky fix
+                                        obstacle_pose.pose.position.z, # Hacky fix
                                         wait=True)
             else: # Don't flip. Double y dimension
                 obstacle_dim.y *= table_extension
@@ -295,7 +289,7 @@ class Controller(object):
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x,
                                         obstacle_pose.pose.position.y,
-                                        obstacle_dim.z / 2.0, # Hacky fix
+                                        obstacle_pose.pose.position.z, # Hacky fix
                                         wait=True)
 
             if obstacle_pose.pose.position.z + obstacle_dim.z/2.0 < self.TABLE_HEIGHT_THRESH:
@@ -496,7 +490,6 @@ class Controller(object):
         # TODO figure out the correct orientation
         rospy.loginfo("ATTACH")
         name = 'attached_object_{}'.format(self._attached_i)
-        self._planning_scene.removeAttachedObject(name, wait=True)
 
         frame_attached_to = 'gripper_link'
         frames_okay_to_collide_with = ['gripper_link', 'l_gripper_finger_link', 'r_gripper_finger_link']
