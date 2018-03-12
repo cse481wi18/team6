@@ -1,4 +1,4 @@
-int8 log_id
+int32 log_id
 string predicted_category
 string actual_category
 string image_file_path
