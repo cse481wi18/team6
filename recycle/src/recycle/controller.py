@@ -7,6 +7,7 @@ import actionlib
 import fetch_api
 import rospy
 import utils
+from joint_state_reader import JointStateReader
 from moveit_python import PlanningSceneInterface
 
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
@@ -19,6 +20,14 @@ from visualization_msgs.msg import Marker
 MOVE_BASE_ACTION = 'move_base'
 
 class Controller(object):
+
+    # Error handling tolerences
+    ZERO_OBSTACLES = 1
+    TABLE_HEIGHT_FAILURE = 2
+    FAILED_TO_BUS = 3
+    ITEM_ATTEMPTS = 2
+
+    TORSO_HEIGHT = 0.4
 
     # head.look_at(frame_id, x, y, z)
     LOOK_AT_TABLE = ('base_link', 0.7, 0.0, 0.75)
@@ -37,6 +46,9 @@ class Controller(object):
     POST_GRASP_DIST = 0.05 # move 5cm back upwards after grasping
 
     NUM_ARM_ATTEMPTS = 3
+
+    # Python 2 doesn't have ENUMS FFFFFUUUUUUUU
+    BUS_RESULT = {'success':0, 'missed':1, 'failed_all':2}
 
     CRANE_ORIENTATION = Quaternion(0.00878962595016,
                                    0.711250066757,
@@ -79,6 +91,10 @@ class Controller(object):
         self._head = fetch_api.Head()
         self._arm = fetch_api.Arm()
         self._gripper = fetch_api.Gripper()
+        self._torso = fetch_api.Torso()
+
+        # init joint state reader
+        self._reader = JointStateReader()
 
         # Planning Scene Interface
         self._planning_scene = PlanningSceneInterface('base_link')
@@ -92,13 +108,13 @@ class Controller(object):
                                                  ActionPose,
                                                  callback=self._move_request_cb)
         # action client to navigate robot
-        self._move_base_client = actionlib.SimpleActionClient(MOVE_BASE_ACTION, MoveBaseAction)
+        # self._move_base_client = actionlib.SimpleActionClient(MOVE_BASE_ACTION, MoveBaseAction)
         # action client to classify objects
         self._classify_client = actionlib.SimpleActionClient(classify_action, ClassifyAction)
 
         # wait for action servers
         rospy.loginfo("Waiting for action servers...")
-        self._move_base_client.wait_for_server()
+        # self._move_base_client.wait_for_server()
         rospy.loginfo("Done waiting for move_base server.")
         self._classify_client.wait_for_server()
         rospy.loginfo("Done waiting for classify server.")
@@ -192,6 +208,10 @@ class Controller(object):
     def start(self):
         # Inifinitely check if there is anything in the queue and process requests
         while True:
+            no_objects = 0
+            table_height_fail = 0
+            failed_to_bus_all = 0
+
             if len(self._request_queue) == 0:
                 continue
 
@@ -206,29 +226,57 @@ class Controller(object):
                 rospy.loginfo("Navigating..")
                 goal = MoveBaseGoal()
                 goal.target_pose = request.target_pose
-                self._move_base_client.send_goal(goal)
-                self._move_base_client.wait_for_result()
+                # self._move_base_client.send_goal(goal)
+                # self._move_base_client.wait_for_result()
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
             if request.action == "bus":
-                self._head.look_at(*self.LOOK_AT_TABLE)
-                rospy.sleep(2) # TODO
+                while True:
+                    self._torso.set_height(self.TORSO_HEIGHT)
+                    self._head.look_at(*self.LOOK_AT_TABLE)
+                    rospy.sleep(2) # TODO
 
-                classifier_result = self._classify_pointcloud()
+                    classifier_result = self._classify_pointcloud()
 
-                if classifier_result:
-                    # add obstacles to PlanningScene for the arm
-                    if self._add_env_obstacles(classifier_result):
-                        # add objects as obstacles on the table before bussing
-                        self._add_object_obstacles(classifier_result)
+                    if classifier_result and classifier_result.num_objects == 0:
+                        if no_objects < self.ZERO_OBSTACLES:
+                            no_objects += 1
+                            continue
+                        else:
+                            rospy.logerr("Failed to find any objects " + str(self.ZERO_OBSTACLES) + " times")
+                            break
 
-                        # now, bus the classified objects
-                        self._bus_objects(classifier_result)
+                    # There is at least one object in the scene.
+                    if classifier_result:
+                        # add obstacles to PlanningScene for the arm
+                        if self._add_env_obstacles(classifier_result):
+                            # add objects as obstacles on the table before bussing
+                            self._add_object_obstacles(classifier_result)
 
-                        # remove the obstacles now that we are done bussing
-                        self._remove_env_obstacles()
-                        self._remove_object_obstacles(classifier_result)
+                            # now, bus the classified objects
+                            bussed = self._bus_objects(classifier_result)
+
+
+                            # remove the obstacles now that we are done bussing
+                            self._remove_env_obstacles()
+                            self._remove_object_obstacles(classifier_result)
+                            
+                            if not bussed and failed_to_bus_all < self.FAILED_TO_BUS:
+                                failed_to_bus_all += 1
+                                continue
+                            else:
+                                rospy.logerr("Failed to bus any object. Tried " + str(self.FAILED_TO_BUS) + " times")
+                                break
+
+                        else:
+                            if table_height_fail < self.TABLE_HEIGHT_FAILURE:
+                                table_height_fail += 1
+                                continue
+                            else:
+                                rospy.logerr("Table height too low. Tried " + str(self.TABLE_HEIGHT_FAILURE) + " times")
+                                break
+
 
             elif request.action == "rest":
                 pass
@@ -279,7 +327,7 @@ class Controller(object):
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x,
                                         obstacle_pose.pose.position.y,
-                                        obstacle_pose.pose.position.z, # Hacky fix
+                                        obstacle_pose.pose.position.z,
                                         wait=True)
             else: # Don't flip. Double y dimension
                 obstacle_dim.y *= table_extension
@@ -289,7 +337,7 @@ class Controller(object):
                                         obstacle_dim.z,
                                         obstacle_pose.pose.position.x,
                                         obstacle_pose.pose.position.y,
-                                        obstacle_pose.pose.position.z, # Hacky fix
+                                        obstacle_pose.pose.position.z,
                                         wait=True)
 
             if obstacle_pose.pose.position.z + obstacle_dim.z/2.0 < self.TABLE_HEIGHT_THRESH:
@@ -320,7 +368,35 @@ class Controller(object):
     def _bus_objects(self, classifier_result):
         rospy.loginfo("Start bussing objects...")
 
-        for i in range(classifier_result.num_objects):
+
+
+        obj_posestamped = classifier_result.object_poses[0]
+        obj_dim = classifier_result.object_dimensions[0]
+        category = classifier_result.classifications[0]
+
+        # DEBUG
+        # self._pub_bin_markers()
+        # self._pub_object_marker(0, category, obj_posestamped.pose, obj_dim)
+
+        # pickedup = self._pickup_object(0, obj_posestamped, obj_dim, category)
+        # if pickedup:
+        #     rospy.loginfo("Picked up object {}: {}".format(0, category))
+        # else:
+        #     gripper_goal = copy.deepcopy(obj_posestamped)
+
+        #     pre_bin_pose = self.PRE_BIN_POSES['recycle']
+        #     gripper_goal.pose.position.x = pre_bin_pose['x']
+        #     gripper_goal.pose.position.y = pre_bin_pose['y']
+        #     gripper_goal.pose.position.z = pre_bin_pose['z']
+        #     self._arm_move_to_pose_attempt(gripper_goal, "post grasp")
+        #     # rospy.logwarn("Failed to pick up object {}, moving on".format(i))
+        # self._print_move_summary()
+
+        # TODO: Ariel's old code for iterating through all the objects
+        # for i in range(classifier_result.num_objects):
+        num_attempts = 0
+        i = 0
+        while i < classifier_result.num_objects:
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
             category = classifier_result.classifications[i]
@@ -328,17 +404,30 @@ class Controller(object):
             # DEBUG
             # self._pub_bin_markers()
             self._pub_object_marker(i, category, obj_posestamped.pose, obj_dim)
+            self._print_move_summary()
 
             pickedup = self._pickup_object(i, obj_posestamped, obj_dim, category)
             if pickedup:
                 rospy.loginfo("Picked up object {}: {}".format(i, category))
+                return True
             else:
-                rospy.logwarn("Failed to pick up object {}, moving on".format(i))
-            self._print_move_summary()
-
+                gripper_goal = copy.deepcopy(obj_posestamped)
+                pre_bin_pose = self.PRE_BIN_POSES['recycle']
+                gripper_goal.pose.position.x = pre_bin_pose['x']
+                gripper_goal.pose.position.y = pre_bin_pose['y']
+                gripper_goal.pose.position.z = pre_bin_pose['z']
+                self._arm_move_to_pose_attempt(gripper_goal, "post grasp")
+                
+                num_attempts += 1
+                if num_attempts < self.ITEM_ATTEMPTS:
+                    continue
+                else: 
+                    num_attempts = 0
+                    i += 1
+                    rospy.logwarn("Failed to pick up object {}, moving on".format(i))
 
         # TODO put arm back to 'home position'
-
+        return False
 
     # Attempts to align gripper to object's shortest dimension
     # Returns True if success, False otherwise
@@ -378,7 +467,7 @@ class Controller(object):
         gripper_goal.pose.position.y = 0
         gripper_goal.pose.position.z = self.PRE_PRE_GRASP_Z
         if not self._arm_move_to_pose_attempt(gripper_goal, "pre pre grasp"):
-            # can't even get to pre pre grasp..
+            # can't even get to pre pre grasp.. # failed, don't need rescan
             return False
 
         # prep gripper pose to go to object
@@ -392,12 +481,12 @@ class Controller(object):
                                         + self.PRE_GRASP_DIST)
         if not self._arm_move_to_pose_attempt(gripper_goal, "pre grasp"):
             # if we can't get to the pre grasp pose, move on
-            return False
+            return False # failed, don't need rescan
 
         # 2. Align gripper with object's shortest dimension
         if not self._align_gripper_to_shortest_dim(gripper_goal, obj_posestamped, obj_dim):
             rospy.logwarn("Cannot align gripper to shortest dimension :(")
-            return False
+            return False # failed, don't need rescan
 
         # 2.5 Remove object as collision obstacle right before grasping
         # TODO add it back if didnt pick up
@@ -409,7 +498,7 @@ class Controller(object):
                                            obj_bottom_z + self.GRIPPER_FINGERTIP_OFFSET + self.TABLE_DIST)
         if not self._arm_move_to_pose_attempt(gripper_goal, "grasp"):
             # if we can't get to grasp pose, move on
-            return False
+            return False # rescan. might touch object
 
         grasp_pose = copy.deepcopy(gripper_goal.pose)
 
@@ -422,7 +511,13 @@ class Controller(object):
         if not self._arm_move_to_pose_attempt(gripper_goal, "post grasp"):
             # if we cant get to post grasp, drop the object and move on
             self._drop_object()
-            return False
+            return False # rescan. might touch object
+
+        # 5.25 Check if it's actually holding the object. 
+        gripper_vals = self._reader.get_joints(['l_gripper_finger_joint', 'r_gripper_finger_joint'])
+        if all([i < 0.01 for i in gripper_vals]):
+            # Gripper is completely closed. It's not actually holding anything
+            return False # rescan. might touch object
 
         # 5.5 Move to pre-bin pose
         pre_bin_pose = self.PRE_BIN_POSES[category]
@@ -431,7 +526,7 @@ class Controller(object):
         gripper_goal.pose.position.z = pre_bin_pose['z']
         if not self._arm_move_to_pose_attempt(gripper_goal, "pre bin"):
             self._put_object_down(gripper_goal, grasp_pose, "pre bin")
-            return False
+            return False # rescan. might touch object
 
         # 6. Move to bin dropoff pose: fingertip obj-height above bin pose
         bin_pose = self.BIN_POSES[category]
@@ -444,7 +539,7 @@ class Controller(object):
         if not self._arm_move_to_pose_attempt(gripper_goal, "bin"):
             # if we can't move to the bin, try to set the obj back down
             self._put_object_down(gripper_goal, grasp_pose, "bin")
-            return False
+            return False # rescan. might touch object
 
         # 7. Drop object and detach obstacle
         self._drop_object()

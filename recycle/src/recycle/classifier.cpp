@@ -27,8 +27,14 @@ namespace recycle {
 
     ROS_INFO("CLASSIFYING");
     
-    sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
-    
+    ros::Time now = ros::Time::now();
+    sensor_msgs::PointCloud2ConstPtr msg;
+    while (true) {
+      msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
+      ros::Time msg_time = msg->header.stamp;
+      if (now < msg_time) break;
+    }
+
     tf::TransformListener tf_listener;                                                    
     tf_listener.waitForTransform("base_link", msg->header.frame_id,                     
                                  ros::Time(0), ros::Duration(5.0));                       
@@ -38,10 +44,8 @@ namespace recycle {
                                   ros::Time(0), transform);                               
     } catch (tf::LookupException& e) {                                                    
       std::cerr << e.what() << std::endl;                                                 
-      // return 1;                                                                           
     } catch (tf::ExtrapolationException& e) {                                             
       std::cerr << e.what() << std::endl;                                                 
-      // return 1;                                                                           
     }                                    
                                                                                             
     sensor_msgs::PointCloud2 cloud_out;                                                   
@@ -68,9 +72,14 @@ namespace recycle {
     //Create result message
     recycle_msgs::AddItemResult result;
     ROS_INFO("ADDING ITEM");
-    
-    sensor_msgs::PointCloud2ConstPtr msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
-    
+    ros::Time now = ros::Time::now();
+    sensor_msgs::PointCloud2ConstPtr msg;
+    while (true) {
+      msg = ros::topic::waitForMessage<sensor_msgs::PointCloud2>("cloud_in");
+      ros::Time msg_time = msg->header.stamp;
+      if (now < msg_time) break;
+    }
+     
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
@@ -81,7 +90,6 @@ namespace recycle {
     ROS_INFO("Segmenting");
     recycle::Segmenter segmenter(table_pub_, above_table_pub_);
     segmenter.AddItem(goal->category, downsampled, &result);
-
     add_item_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
   } 

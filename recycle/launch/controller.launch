@@ -3,8 +3,8 @@
 	<!-- <node pkg="rviz" type="rviz" name="$(anon rviz)" args="-d $(find applications)/config/updated_navigation.rviz" /> -->
 
 	<!-- launch moveit for arm -->
-	<!-- <include file="$(find fetch_api)/launch/move_group.launch" /> -->
-
+	<!-- <include file="$(find fetch_api)/launch/move_group.launch" />
+ -->
 	<param name="ramp_mesh_file" value="/home/team6/catkin_ws/src/cse481wi18/recycle/src/recycle/rampMesh.stl" />
 	<param name="flip_obstacles" value="true" />
 	<param name="table_extension" type="double" value="1.5" />
