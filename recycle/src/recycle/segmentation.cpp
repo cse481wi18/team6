@@ -165,11 +165,11 @@ void Segmenter::SegmentTabletopScene(PointCloudC::Ptr cloud,
   // table->pose.position.z += table_obstacle_padding;
   table->dimensions.x = table_shape.dimensions[0];
   table->dimensions.y = table_shape.dimensions[1];
-  table->dimensions.z = table_shape.dimensions[2] + table_obstacle_padding;
+  //table->dimensions.z = table_shape.dimensions[2] + table_obstacle_padding;
 
 
-  double center = table->pose.position.z / 2;
-  double height = table->pose.position.z;
+  double center = (table->pose.position.z + table->dimensions.z / 2.0) / 2.0;
+  double height = table->pose.position.z + table->dimensions.z / 2.0;
   table->pose.position.z = center;
   table->dimensions.z = height + table_obstacle_padding;
   // ROS_INFO_STREAM("Table dimensions!!!!!!!! ");
