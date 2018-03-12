@@ -86,7 +86,7 @@ class MapPoses:
         int_marker.description = action.kind
         int_marker.pose.position.x = 0
         int_marker.pose.position.y = 0
-        int_marker.pose.position.z = 0
+        int_marker.pose.position.z = 0.1
         int_marker.pose.orientation.w = 1
 
         # make the rotational control
