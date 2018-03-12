@@ -7,9 +7,10 @@ import pickle
 
 from interactive_markers.interactive_marker_server import InteractiveMarkerServer
 from visualization_msgs.msg import InteractiveMarker, InteractiveMarkerControl, InteractiveMarkerFeedback, Marker
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import Point, Pose, PoseStamped, Quaternion, Vector3
 from map_annotator.msg import UserAction, PoseNames
 from recycle_msgs.msg import ActionPose
+from std_msgs.msg import Header, ColorRGBA
 
 def wait_for_time():
     while rospy.Time().now().to_sec() == 0:
@@ -78,6 +79,7 @@ class MapPoses:
 
 
     def _create(self, action):
+        # Make interactive marker object
         int_marker = InteractiveMarker()
         int_marker.header.frame_id = "map"
         int_marker.name = action.name
@@ -87,7 +89,9 @@ class MapPoses:
         int_marker.pose.position.z = 0
         int_marker.pose.orientation.w = 1
 
+        # make the rotational control
         twist_control = InteractiveMarkerControl()
+        twist_control.name = "rotate_x"
         twist_control.orientation.w = 1
         twist_control.orientation.x = 0
         twist_control.orientation.y = 1
@@ -96,6 +100,7 @@ class MapPoses:
         twist_control.always_visible = True
         int_marker.controls.append(twist_control)
 
+        # make the arrow marker for the move plan control (below)
         arrow_marker = Marker()
         arrow_marker.type = Marker.ARROW
         arrow_marker.pose.orientation.w = 1
@@ -106,21 +111,7 @@ class MapPoses:
         arrow_marker.color.g = 0.5
         arrow_marker.color.b = 0.5
         arrow_marker.color.a = 1.0
-
-        #color = (38, 222, 129) if action.kind == 'bus' else (69, 170, 242)
-        #label_marker = Marker()
-        #label_marker.type = Marker.TEXT_VIEW_FACING
-        #label_marker.pose.orientation.w = 1
-        #label_marker.pose.position.z = .2
-        #label_marker.scale.x = .3
-        #label_marker.scale.y = .3
-        #label_marker.scale.z = .3
-        #label_marker.color.r = float(color[0]) / 255
-        #label_marker.color.g = float(color[1]) / 255
-        #label_marker.color.b = float(color[2]) / 255
-        #label_marker.color.a = 1.0
-        #label_marker.text = action.name
-
+        # interactive marker control for moving along a plane
         button_control = InteractiveMarkerControl()
         button_control.orientation.w = 1
         button_control.orientation.x = 0
@@ -129,8 +120,23 @@ class MapPoses:
         button_control.interaction_mode = InteractiveMarkerControl.MOVE_PLANE
         button_control.always_visible = True
         button_control.markers.append(arrow_marker)
-        #button_control.markers.append(label_marker)
         int_marker.controls.append(button_control)
+
+        # Make a text label marker
+        color = (32, 191, 107) if action.kind == 'bus' else (45, 152, 218)
+        label_marker = Marker(
+                type=Marker.TEXT_VIEW_FACING,
+                pose=Pose(Point(0.0, 0.0, .5), Quaternion(0, 0, 0, 1)),
+                scale=Vector3(0.3, 0.3, 0.3),
+                color=ColorRGBA(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0, 1.0),
+                text=action.name)
+        # need dummy control to make things happy
+        dummy_control = InteractiveMarkerControl()
+        dummy_control.always_visible = True
+        dummy_control.orientation.w = 1
+        dummy_control.interaction_mode = InteractiveMarkerControl.NONE
+        dummy_control.markers.append(label_marker)
+        int_marker.controls.append(dummy_control)
 
         self._marker_server.insert(int_marker, self._handle_click)
         self._marker_server.applyChanges()
