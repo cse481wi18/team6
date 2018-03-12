@@ -80,9 +80,13 @@
         return {
           type: String,
           title: String,
-          lastId: {
-              type: Number,
-              value: 0
+          maxId: {
+            type: Number,
+            value: 0
+          },
+          minId: {
+            type: Number,
+            value: 0
           },
           items: {
             type: Object,
@@ -110,18 +114,18 @@
 
       _nextItems() {
         console.log('Fetching next');
-        this._getItems(NUM_DISPLAY);
+        this._getItems(this.maxId, NUM_DISPLAY);
       }
 
       _prevItems() {
         console.log('Fetching prev');
-        this._getItems(-1 * NUM_DISPLAY);
+        this._getItems(this.minId, -1 * NUM_DISPLAY);
       }
 
-      _getItems(num) {
-        console.log('Getting', num, 'items starting at', this.lastId, 'for', this.type);
+      _getItems(start, num) {
+        console.log('Getting', num, 'items starting at', start, 'for', this.type);
         var msg = {
-          starting_log_num: this.lastId,
+          starting_log_num: start,
           page_size: num
         };
 
@@ -135,27 +139,13 @@
         var goal = {
           log_item: evt.detail.item
         };
-
-        // find smallest id and ask for one before that to refresh
-        var logItems = this.items.log_items;
-        var smallestId = logItems[0].log_id;
-        for (var i = 1; i < logItems.length; i++) {
-          if (logItems[i].log_id < smallestId) {
-            smallestId = logItems[i].log_id;
-          }
-        }
-
-        // hack to make sure we get the first item again
-        this.lastId = smallestId - 1;
-        console.log('new lastId', this.lastId);
-
-        // important to send this after we update the field
         this.$.correctionClient.send(goal);
       }
 
       _handleCorrectionResult(evt) {
         console.log('Correction: received', evt.detail);
-        this._nextItems();
+        // go back 1 before min to "refresh" to get the next 3
+        this._getItems(this.minId - 1, NUM_DISPLAY);
       }
 
       _handleResponse(evt) {
@@ -163,16 +153,19 @@
 
         // update to last id
         var logItems = this.items.log_items;
-        var maxId = 0;
-        for (var i = 0; i < logItems.length; i++) {
-          if (logItems[i].log_id > maxId) {
-            maxId = logItems[i].log_id;
+        if (logItems.length > 0) {
+          this.maxId = logItems[0].log_id;
+          this.minId = logItems[0].log_id;
+
+          for (var i = 0; i < logItems.length; i++) {
+            if (logItems[i].log_id > this.maxId) {
+              this.maxId = logItems[i].log_id;
+            } else if (logItems[i].log_id < this.minId) {
+              this.minId = logItems[i].log_id;
+            }
           }
         }
-        if (logItems.length > 0) {
-          this.lastId = maxId;
-        }
-        console.log(this.type, 'Message', msg, this.items, 'id', this.lastId);
+        console.log(this.type, 'Message', msg, this.items, 'ids', this.minId, this.maxId);
       }
 
       ready() {
