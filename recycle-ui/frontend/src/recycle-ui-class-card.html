@@ -23,7 +23,7 @@
         height: 16.5vh;
       }
 
-      .trash-icon {
+      .landfill-icon {
         fill: var(--paper-grey-500);
       }
     </style>
@@ -41,8 +41,8 @@
       </div>
       <div class="card-actions">
         <div class="horizontal justified">
-          <iron-icon class='trash-icon' icon="icons:delete-sweep"></iron-icon>
-          <paper-button on-tap="_labelTrash">Trash</paper-button>
+          <iron-icon class='landfill-icon' icon="icons:delete-sweep"></iron-icon>
+          <paper-button on-tap="_labelLandfill">Landfill</paper-button>
           <paper-button on-tap="_labelRecycle">Recycle</paper-button>
           <paper-button on-tap="_labelCompost">Compost</paper-button>
         </div>
@@ -84,8 +84,8 @@
         console.log(this.status);
       }
 
-      _labelTrash(evt) {
-        this._correctLabel('trash');
+      _labelLandfill(evt) {
+        this._correctLabel('landfill');
       }
 
       _labelRecycle(evt) {

@@ -38,8 +38,7 @@ class Segmenter {
   void SegmentTabletopScene(PointCloudC::Ptr cloud,
                             std::vector<Object>* objects, 
                             std::vector<Object>* obstacles,
-                            PointCloudC::Ptr above_surface_cloud,
-                            bool classify);
+                            PointCloudC::Ptr above_surface_cloud);
 
   void ClassifyCloud(PointCloudC::Ptr filtered, recycle_msgs::ClassifyResult* result);
 
@@ -71,7 +70,6 @@ class Segmenter {
 
   void SegmentSurfaceObjects(PointCloudC::Ptr cloud,
                              pcl::PointIndices::Ptr surface_indices,
-                             std::vector<pcl::PointIndices>* object_indices,
-                             bool classify);
+                             std::vector<pcl::PointIndices>* object_indices);
  };
 }  // namespace recycle

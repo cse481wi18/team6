@@ -11,7 +11,7 @@ namespace recycle {
    public:
     Cropper();
     Cropper(const ros::Publisher& pub);
-    PointCloudC::Ptr Crop(const PointCloudC::Ptr cloud);
+    PointCloudC::Ptr Crop(const PointCloudC::Ptr cloud, bool classify);
    private:
     ros::Publisher pub_;
   };

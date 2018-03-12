@@ -24,8 +24,14 @@ void Saver::Log(Object object,
   std::stringstream point_cloud_path;
   std::stringstream features_path;
 
-  point_cloud_path << location << classification << ros::Time::now().toSec() << ".bag";
-  features_path << location << label_sub_directory << classification << ros::Time::now().toSec() << "_label.bag";
+  // point_cloud_path << location << classification << ros::Time::now().toSec() << ".bag";
+  // features_path << location << label_sub_directory << classification << ros::Time::now().toSec() << "_label.bag";
+
+  int num = rand();
+
+  point_cloud_path << location << classification << num << ".bag";
+  features_path << location << label_sub_directory << num << "_label.bag";
+
 
   std::string pc_path = point_cloud_path.str();
   std::string f_path = features_path.str();

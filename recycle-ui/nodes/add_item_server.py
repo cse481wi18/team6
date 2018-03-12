@@ -46,16 +46,18 @@ class AddItemServer:
         self._add_item_client.wait_for_server()
 
     def _handle_add_item(self, add_item):
-        rospy.logerr('AddItem: ' + add_item.category)
+        rospy.loginfo('===AddItem: ' + add_item.category)
         # Adjust torso and head to be at the same place the controller would place it
         self._torso.set_height(Controller.TORSO_HEIGHT)
         self._head.look_at(*Controller.LOOK_AT_TABLE)
 
+        rospy.loginfo('===Set torso and head, sending message to varun')
         # forward to the real add item ActionLibServer
         goal = AddItemGoal(category=add_item.category)
         self._add_item_client.send_goal(goal)
         self._add_item_client.wait_for_result()
         result = self._add_item_client.get_result()
+        rospy.loginfo('===Received response')
         self._log_item = result.to_log
 
         # publish pointcloud

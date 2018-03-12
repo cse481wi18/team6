@@ -2,24 +2,31 @@
 	<arg name="data_dir" />
 
 	<!-- Segmentation -->
-	<param name="ec_cluster_tolerance" value="0.03" />
-	<param name="ec_min_cluster_size_add" value="100" />
-	<param name="ec_max_cluster_size_add" value="750000" />
-	<param name="ec_min_cluster_size" value="100" />
+	<param name="ec_cluster_tolerance" value="0.03" />s
+	<param name="ec_min_cluster_size" value="50" />
 	<param name="ec_max_cluster_size" value="7500" />
 	<param name="distance_above_plane" value="0.01" />
-
 	<param name="table_obstacle_padding" value="0" />
 
 	<!-- Cropping -->
+	<!-- Classification -->
 	<param name="crop_min_x" value="-1" />
 	<param name="crop_min_y" value="-0.4" />
 	<param name="crop_min_z" value="0.3" />
 
 	<param name="crop_max_x" value="1.2" />
-	<param name="crop_max_z" value="1.75" />
 	<param name="crop_max_y" value="0.5" />
+	<param name="crop_max_z" value="1.75" />
 	
+	<!-- Adding New Item -->
+<!-- 	<param name="crop_min_x_add" value="0.5" />
+	<param name="crop_min_y_add" value="-0.3" />
+	<param name="crop_min_z_add" value="0.5" />
+
+	<param name="crop_max_x_add" value="1" />
+	<param name="crop_max_y_add" value="0.3" />
+	<param name="crop_max_z_add" value="1" /> -->
+
 	<!-- Classification-->
 	<param name="landfill_confidence_threshold" value="0.4" />	
 	<param name="color_weight" value="10" />

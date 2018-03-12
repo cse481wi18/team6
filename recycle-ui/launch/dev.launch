@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find recycle_ui)/launch/classification_server.launch" />
+  <include file="$(find recycle_ui)/launch/web-stuff.launch" />
+</launch>

@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
   ros::Publisher above =
       nh.advertise<sensor_msgs::PointCloud2>("above_cloud", 1, true);
   recycle::Segmenter segmenter(table, above, dummy_recognizer);
-  segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud, true);
+  segmenter.SegmentTabletopScene(cropped_cloud, &objects, &obstacles, above_surface_cloud);
 
   if (objects.size() != 1) {
     std::cerr << path << " Expected to see exactly one object, found " << objects.size()

@@ -7,7 +7,7 @@ from sensor_msgs.msg import PointCloud2
 from perception import MockCamera
 import sqlite3
 
-WASTE_TYPES = ['trash', 'recycle', 'compost']
+WASTE_TYPES = ['landfill', 'recycle', 'compost']
 
 def wait_for_time():
     """Wait for simulated time to begin.

@@ -45,22 +45,24 @@ namespace {
 
 int SQLCallback(void *data, int argc, char **argv, char **azColName) {
   std::string type = argv[0];
-  std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
+  std::string file_path = argv[1];
+  if (boost::filesystem::exists(file_path) && boost::filesystem::is_regular_file(file_path)) {
+    std::vector<recycle_msgs::ObjectFeatures>* dataset_point = static_cast<std::vector<recycle_msgs::ObjectFeatures>*>(data);
+    rosbag::Bag bag;
+    bag.open(file_path, rosbag::bagmode::Read);
+    std::vector<std::string> topics;
+    topics.push_back("object_features");
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-  rosbag::Bag bag;
-  bag.open(argv[1], rosbag::bagmode::Read);
-  std::vector<std::string> topics;
-  topics.push_back("object_features");
-  rosbag::View view(bag, rosbag::TopicQuery(topics));
-
-  for (rosbag::View::iterator it = view.begin(); it != view.end(); ++it) {
-    ObjectFeatures::Ptr fp = it->instantiate<ObjectFeatures>();
-    if (fp != NULL) {
-      fp->classification = type;
-      dataset_point->push_back(*fp);
+    for (rosbag::View::iterator it = view.begin(); it != view.end(); ++it) {
+      ObjectFeatures::Ptr fp = it->instantiate<ObjectFeatures>();
+      if (fp != NULL) {
+        fp->classification = type;
+        dataset_point->push_back(*fp);
+      }
     }
+    bag.close(); 
   }
-  bag.close();
   return 0;
 }
 
@@ -76,7 +78,9 @@ int ObjectRecognizer::LoadData(const std::string& database_path) {
     fprintf(stderr, "Opened database successfully\n");
   }
 
-  std::string statement = "SELECT actual_category, feature_file_path FROM classification_log WHERE actual_category is not NULL";
+  std::string statement = "SELECT actual_category, feature_file_path "
+                          "FROM classification_log " 
+                          "WHERE actual_category is not NULL AND actual_category <> ''";
   
   rc = sqlite3_exec(db, statement.c_str(), SQLCallback, static_cast<void*>(&dataset_), &zErrMsg);
 

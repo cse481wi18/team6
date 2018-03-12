@@ -55,7 +55,7 @@ namespace recycle {
     pcl::fromROSMsg(cloud_out, *cloud);
 
     Cropper cropper(crop_pub_);
-    PointCloudC::Ptr cropped = cropper.Crop(cloud);
+    PointCloudC::Ptr cropped = cropper.Crop(cloud, true);
     Downsampler downsampler(downsample_pub_);
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
 
@@ -84,7 +84,7 @@ namespace recycle {
     pcl::fromROSMsg(* msg, *cloud);
 
     Cropper cropper(crop_pub_);
-    PointCloudC::Ptr cropped = cropper.Crop(cloud);
+    PointCloudC::Ptr cropped = cropper.Crop(cloud, true);
     Downsampler downsampler(downsample_pub_);
     PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
     ROS_INFO("Segmenting");
