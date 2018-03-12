@@ -1,2 +1,2 @@
-int8 id
+int32 id
 string waste_type
