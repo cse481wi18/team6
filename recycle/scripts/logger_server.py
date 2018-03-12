@@ -5,7 +5,7 @@ from recycle_msgs.msg import LogItem, DbLogAction, DbLogResult
 import sqlite3
 import actionlib
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/temp.db'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
 
 def wait_for_time():
     """Wait for simulated time to begin.

@@ -330,7 +330,7 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
   }
 }
 
-void Segmenter::ClassifyCloud(PointCloudC::Ptr filtered) {
+void Segmenter::ClassifyCloud(PointCloudC::Ptr filtered, recycle_msgs::ClassifyResult* result) {
   PointCloudC::Ptr cloud(new PointCloudC());
   std::vector<int> index;
   pcl::removeNaNFromPointCloud(*filtered, *cloud, index);  
@@ -351,6 +351,16 @@ void Segmenter::ClassifyCloud(PointCloudC::Ptr filtered) {
     double confidence;
     recognizer_.Recognize(object, &name, &confidence);
     confidence = round(1000 * confidence) / 1000;
+
+    double landfill_confidence_threshold;
+    ros::param::param("landfill_confidence_threshold", landfill_confidence_threshold, 0.4);
+
+    if (confidence <= landfill_confidence_threshold) {
+      name = "landfill";
+    }
+    result->classifications.push_back(name);
+    result->confidence.push_back(confidence);
+
     ROS_INFO_STREAM("Object is classified as " << name);
     ROS_INFO_STREAM("Confidence is " << confidence);
   }

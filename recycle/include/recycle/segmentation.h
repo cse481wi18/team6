@@ -41,7 +41,7 @@ class Segmenter {
                             PointCloudC::Ptr above_surface_cloud,
                             bool classify);
 
-  void ClassifyCloud(PointCloudC::Ptr filtered);
+  void ClassifyCloud(PointCloudC::Ptr filtered, recycle_msgs::ClassifyResult* result);
 
   void SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered, 
                           recycle_msgs::ClassifyResult* result,

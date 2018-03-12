@@ -15,7 +15,7 @@ def wait_for_time():
     while rospy.Time().now().to_sec() == 0:
         pass
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/temp.db'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
 class ClassificationServer():
 
     def __init__(self, waste_type):
