@@ -16,11 +16,12 @@ def wait_for_time():
         pass
 
 DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
+
 class ClassificationServer():
 
     def __init__(self, waste_type):
         self._waste_type = waste_type
-        rospy.logerr("CONSTRUCTING SERVER")
+        rospy.loginfo("CONSTRUCTING SERVER")
         self._log_page_sub = rospy.Subscriber('/recycle_ui/get_{}_log_page'.format(waste_type),
                 GetLogPage,
                 callback=self._handle_get_log_page)
@@ -32,17 +33,17 @@ class ClassificationServer():
         self._active_cloud_pubs = []
 
     def _handle_get_log_page(self, get_log_page):
-        rospy.logerr('GOT A MESSAGE')
-        rospy.logerr(get_log_page)
+        rospy.loginfo('log page handler got a message:')
+        rospy.loginfo(get_log_page)
         is_reverse_page = get_log_page.page_size < 0
         sort_direction = 'DESC' if is_reverse_page else 'ASC'
         log_id_inequality = 'log_id < ' if is_reverse_page else 'log_id > '
         log_id_inequality += str(get_log_page.starting_log_num)
-        rospy.logerr(log_id_inequality)
-        rospy.logerr(sort_direction)
+        rospy.loginfo(log_id_inequality)
+        rospy.loginfo('sort direction {}'.format(sort_direction))
 
         conn = sqlite3.connect(DB_FILE)
-        rospy.logerr('DB connected')
+        rospy.loginfo('DB connected')
         c = conn.cursor()
         c.execute('''SELECT
                   log_id,
@@ -53,7 +54,7 @@ class ClassificationServer():
                   feature_file_path
             FROM classification_log
             WHERE predicted_category=?
-            AND actual_category IS NULL
+            AND (actual_category IS NULL OR actual_category='')
             AND {}
             ORDER BY log_id {}
             LIMIT ?'''.format(log_id_inequality, sort_direction),
@@ -63,8 +64,8 @@ class ClassificationServer():
         log_items = []
         for log in logs:
             # build response fields
-            rospy.logerr(log)
-            rospy.logerr("PROCESSING LOG")
+            rospy.loginfo(log)
+            rospy.loginfo("PROCESSING LOG")
             cloud_topic_name = '/log{}_pointcloud'.format(log[0])
             log_items.append(LogItem(log_id=log[0],
                 predicted_category=str(log[1]),
@@ -74,16 +75,15 @@ class ClassificationServer():
                 feature_file_path=str(log[5])))
 
             # prepare to publish pointclouds
-            rospy.logerr(log)
             cloud = self._camera.read_cloud(log[3])
             pub = rospy.Publisher(cloud_topic_name, PointCloud2, latch=True, queue_size=1)
             pub.publish(cloud)
-            rospy.logerr('printed to {}'.format(cloud_topic_name))
+            rospy.loginfo('published pointcloud to {}'.format(cloud_topic_name))
             self._active_cloud_pubs.append(pub)
 
         log_items = sorted(log_items, key=lambda x: x.log_id)
         active_logs = ActiveLogs(log_items=log_items)
-        rospy.logerr(active_logs)
+        rospy.loginfo(active_logs)
         self._active_log_pub.publish(active_logs);
         conn.close()
 

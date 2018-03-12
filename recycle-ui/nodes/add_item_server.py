@@ -6,7 +6,9 @@ import rospy
 from sensor_msgs.msg import PointCloud2
 import actionlib
 
+import fetch_api
 from perception import MockCamera
+from recycle import Controller
 from recycle_msgs.msg import AddItemAction, AddItemGoal, LogItem, DbLogAction, DbLogGoal
 from recycle_ui.msg import AddItemAction as UIAddItemAction, AddItemResult as UIAddItemResult, \
         ConfirmItemAction, ConfirmItemResult
@@ -24,6 +26,8 @@ POINTCLOUD_TOPIC = 'confirm_pointcloud'
 
 class AddItemServer:
     def __init__(self):
+        self._head = fetch_api.Head()
+        self._torso = fetch_api.Torso()
         self._camera = MockCamera()
         self._log_item = None
         self._dblog_client = actionlib.SimpleActionClient('/recycle/dblog_action', DbLogAction)
@@ -43,6 +47,9 @@ class AddItemServer:
 
     def _handle_add_item(self, add_item):
         rospy.logerr('AddItem: ' + add_item.category)
+        # Adjust torso and head to be at the same place the controller would place it
+        self._torso.set_height(Controller.TORSO_HEIGHT)
+        self._head.look_at(*Controller.LOOK_AT_TABLE)
 
         # forward to the real add item ActionLibServer
         goal = AddItemGoal(category=add_item.category)
