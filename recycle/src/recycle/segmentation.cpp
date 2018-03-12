@@ -312,7 +312,7 @@ void Segmenter::SegmentAndClassify(PointCloudC::Ptr cloud_unfiltered,
     double landfill_confidence_threshold;
     ros::param::param("landfill_confidence_threshold", landfill_confidence_threshold, 0.4);
 
-    if (confidence > landfill_confidence_threshold) {
+    if (!name.empty() && confidence > landfill_confidence_threshold) {
       result->classifications.push_back(name);
     } else {
       result->classifications.push_back("landfill");

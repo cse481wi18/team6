@@ -270,12 +270,13 @@ class Controller(object):
                         self._remove_env_obstacles()
                         self._remove_object_obstacles(classifier_result)
                         
-                        if not bussed and failed_to_bus_all < self.FAILED_TO_BUS:
-                            failed_to_bus_all += 1
-                            continue
-                        else:
-                            rospy.logerr("Failed to bus any object. Tried " + str(self.FAILED_TO_BUS) + " times")
-                            break
+                        if not bussed:
+                            if failed_to_bus_all < self.FAILED_TO_BUS:
+                                failed_to_bus_all += 1
+                                continue
+                            else:
+                                rospy.logerr("Failed to bus any object. Tried " + str(self.FAILED_TO_BUS) + " times")
+                                break
 
                     else:
                         if table_height_fail < self.TABLE_HEIGHT_FAILURE:
@@ -487,7 +488,7 @@ class Controller(object):
 
         # 4.5 Check if it's actually holding the object.
         gripper_vals = self._reader.get_joints(['l_gripper_finger_joint', 'r_gripper_finger_joint'])
-        if all([i < 0.01 for i in gripper_vals]):
+        if all([i < 0.0001 for i in gripper_vals]):
             # Gripper is completely closed. It's not actually holding anything
             rospy.logwarn("Gripper empty.")
             return False, gripper_goal # rescan. might touch object
