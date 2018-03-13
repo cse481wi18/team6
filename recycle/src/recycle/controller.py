@@ -219,7 +219,7 @@ class Controller(object):
         # Inifinitely check if there is anything in the queue and process requests
         while True:
             # Error handling tolerences
-            ZERO_OBSTACLES = rospy.get_param("zero_obstacle_tries", 2)
+            ZERO_OBSTACLES = rospy.get_param("zero_obstacle_tries", 1)
             TABLE_HEIGHT_FAILURE = rospy.get_param("table_height_tries", 2)
             FAILED_TO_BUS = rospy.get_param("bus_all_tries", 2)
             SAME_SCENE = rospy.get_param("same_scene_tries", 2)
@@ -333,6 +333,7 @@ class Controller(object):
                     # rescan to get new table
                     classifier_result = self._classify_pointcloud()
                     if self._add_env_obstacles(classifier_result):
+                        self._torso.set_height(self.TORSO_HEIGHT)
                         self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
                         self._remove_env_obstacles()
 
