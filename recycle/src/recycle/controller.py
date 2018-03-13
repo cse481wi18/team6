@@ -43,7 +43,7 @@ class Controller(object):
 
     NUM_ARM_ATTEMPTS = 3
 
-    TUCKING_MOVE_BACK_DIST = -0.1
+    TUCKING_MOVE_BACK_DIST = -0.2
     TUCKED_POSITION_INFO = {'position':{'x':0.0577042549849,
                                         'y':-0.14065502584,
                                         'z':0.95760756731},
@@ -219,10 +219,10 @@ class Controller(object):
         # Inifinitely check if there is anything in the queue and process requests
         while True:
             # Error handling tolerences
-            ZERO_OBSTACLES = rospy.get_param("zero_obstacle_tries", 3)
+            ZERO_OBSTACLES = rospy.get_param("zero_obstacle_tries", 2)
             TABLE_HEIGHT_FAILURE = rospy.get_param("table_height_tries", 2)
             FAILED_TO_BUS = rospy.get_param("bus_all_tries", 2)
-            SAME_SCENE = rospy.get_param("same_scene_tries", 3)
+            SAME_SCENE = rospy.get_param("same_scene_tries", 2)
 
             # counters
             no_objects_counter = 0
@@ -328,8 +328,9 @@ class Controller(object):
 
                 if classifier_result:
                     rospy.loginfo("Tucking arm away..")
-                    self._base.move_forward(self.TUCKING_MOVE_BACK_DIST)
-                    if self._add_env_obstacles(classifier_result, x_offset=self.TUCKING_MOVE_BACK_DIST):
+                    self._base.go_forward(self.TUCKING_MOVE_BACK_DIST)
+                    if self._add_env_obstacles(classifier_result, x_offset=-self.TUCKING_MOVE_BACK_DIST):
+                        rospy.sleep(1)
                         self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
                         self._remove_env_obstacles()
 
