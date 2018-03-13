@@ -33,6 +33,8 @@
 	<param name="color_weight" value="10" />
 	<param name="size weight" value="15" />
 
+	<param name="num_color_buckets" value="15" />
+
 	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen">
 		<!-- <remap from="cloud_in" to="mock_point_cloud" /> -->
 		<remap from="cloud_in" to="/head_camera/depth_registered/points" />
