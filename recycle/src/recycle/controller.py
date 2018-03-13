@@ -38,7 +38,7 @@ class Controller(object):
 
     PRE_GRASP_DIST = 0.03  # fingertips 5cm above the object
     GRASP_DIST = 0.02  # gripper base 2cm above the object
-    TABLE_DIST = 0.005  # fingertip 0.5cm above the table
+    TABLE_DIST = 0.02  # fingertip 0.5cm above the table
     POST_GRASP_DIST = 0.10 # move 10cm back upwards after grasping
 
     NUM_ARM_ATTEMPTS = 3
