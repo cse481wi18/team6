@@ -43,7 +43,7 @@ class Controller(object):
 
     NUM_ARM_ATTEMPTS = 3
 
-    TUCKING_MOVE_BACK_DIST = -0.2
+    TUCKING_MOVE_BACK_DIST = -0.3
     TUCKED_POSITION_INFO = {'position':{'x':0.0577042549849,
                                         'y':-0.14065502584,
                                         'z':0.95760756731},
@@ -328,6 +328,7 @@ class Controller(object):
 
                 if classifier_result:
                     rospy.loginfo("Tucking arm away..")
+                    self.TUCKING_MOVE_BACK_DIST = rospy.get_param("tucking_move_back_dist", -0.3)
                     self._base.go_forward(self.TUCKING_MOVE_BACK_DIST)
                     # rescan to get new table
                     classifier_result = self._classify_pointcloud()
