@@ -31,7 +31,7 @@
 	<!-- Classification-->
 	<param name="landfill_confidence_threshold" value="0.4" />
 	<param name="color_weight" value="10" />
-	<param name="size weight" value="15" />
+	<param name="size_weight" value="15" />
 
 	<param name="num_color_buckets" value="15" />
 

@@ -329,8 +329,9 @@ class Controller(object):
                 if classifier_result:
                     rospy.loginfo("Tucking arm away..")
                     self._base.go_forward(self.TUCKING_MOVE_BACK_DIST)
-                    if self._add_env_obstacles(classifier_result, x_offset=-self.TUCKING_MOVE_BACK_DIST):
-                        rospy.sleep(1)
+                    # rescan to get new table
+                    classifier_result = self._classify_pointcloud()
+                    if self._add_env_obstacles(classifier_result):
                         self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
                         self._remove_env_obstacles()
 
