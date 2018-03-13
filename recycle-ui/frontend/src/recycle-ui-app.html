@@ -13,7 +13,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 
 <link rel="lazy-import" href="recycle-ui-map-control.html">
-<link rel="lazy-import" href="recycle-ui-add-control.html">
 <link rel="lazy-import" href="recycle-ui-class-control.html">
 
 
@@ -42,7 +41,7 @@
       }
 
       #title {
-        margin-left: 15px;
+        margin-left: 10px;
       }
 
       #links > a {
@@ -88,8 +87,7 @@
             <div id="title" main-title>Recycl-o-bot</div>
             <div id="links">
                 <a href="/map">View Map</a> /
-                <a href="/class">View Classifications</a> /
-                <a href="/add">Add Item</a>
+                <a href="/class">View Classifications</a>
             </div>
           </app-toolbar>
         </app-header>
@@ -99,7 +97,6 @@
         <iron-pages selected="[[page]]" attr-for-selected="name" fallback-selection="map" role="main">
           <recycle-ui-class-control name="class" route="{{subRoute}}"></recycle-ui-class-control>
           <recycle-ui-map-control name="map" route="{{subRoute}}"></recycle-ui-map-control>
-          <recycle-ui-add-control name="add" route="{{subRoute}}"></recycle-ui-add-control>
         </iron-pages>
       </app-header-layout>
 
