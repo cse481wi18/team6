@@ -430,9 +430,11 @@ class Controller(object):
             obj_posestamped = classifier_result.object_poses[i]
             obj_dim = classifier_result.object_dimensions[i]
             category = classifier_result.classifications[i]
+            confidence = classifier_result.confidence[i]
 
             pickedup = self._pickup_object(i, obj_posestamped, obj_dim, category)
             self._print_move_summary()
+            rospy.loginfo("Object {}: {} with {}".format(i, category, confidence))
 
             # Move arm out to pre bin pose after each pickup
             gripper_goal = copy.deepcopy(obj_posestamped)
