@@ -15,7 +15,7 @@ def wait_for_time():
     while rospy.Time().now().to_sec() == 0:
         pass
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/temp.db'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
 
 class ClassificationServer():
 
@@ -81,7 +81,7 @@ class ClassificationServer():
             rospy.loginfo('published pointcloud to {}'.format(cloud_topic_name))
             self._active_cloud_pubs.append(pub)
 
-        log_items = sorted(log_items, key=lambda x: x.log_id)
+        log_items = sorted(log_items, key=lambda x: -x.log_id)
         active_logs = ActiveLogs(log_items=log_items)
         rospy.loginfo(active_logs)
         self._active_log_pub.publish(active_logs);

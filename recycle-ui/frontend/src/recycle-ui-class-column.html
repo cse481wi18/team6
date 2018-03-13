@@ -135,7 +135,13 @@
       _correctItem(evt) {
         // modify the log item to have the corrected label
         console.log('Correcting item:', evt.detail);
-        evt.detail.item.actual_category = evt.detail.correctLabel;
+        if (evt.detail.correctLabel === 'delete') {
+          // this is a pseudo hack to make it disappear from the list
+          // lazy deletes from log
+          evt.detail.item.predicted_category = evt.detail.correctLabel;
+        } else {
+          evt.detail.item.actual_category = evt.detail.correctLabel;
+        }
         var goal = {
           log_item: evt.detail.item
         };

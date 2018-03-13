@@ -42,6 +42,7 @@
       <div class="card-actions">
         <div class="horizontal justified">
           <iron-icon class='landfill-icon' icon="icons:delete-sweep"></iron-icon>
+          <paper-button on-tap="_labelDelete">Delete</paper-button>
           <paper-button on-tap="_labelLandfill">Landfill</paper-button>
           <paper-button on-tap="_labelRecycle">Recycle</paper-button>
           <paper-button on-tap="_labelCompost">Compost</paper-button>
@@ -94,6 +95,10 @@
 
       _labelCompost(evt) {
         this._correctLabel('compost');
+      }
+
+      _labelDelete(evt) {
+        this._correctLabel('delete');
       }
 
       _correctLabel(type) {
