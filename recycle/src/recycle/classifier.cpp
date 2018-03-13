@@ -86,10 +86,10 @@ namespace recycle {
     Cropper cropper(crop_pub_);
     PointCloudC::Ptr cropped = cropper.Crop(cloud, true);
     Downsampler downsampler(downsample_pub_);
-    PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
+    // PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
     ROS_INFO("Segmenting");
     recycle::Segmenter segmenter(table_pub_, above_table_pub_);
-    segmenter.AddItem(goal->category, downsampled, &result);
+    segmenter.AddItem(goal->category, cropped, &result);
     add_item_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
   } 
