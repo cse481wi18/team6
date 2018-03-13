@@ -39,7 +39,7 @@ class Controller(object):
     PRE_GRASP_DIST = 0.03  # fingertips 5cm above the object
     GRASP_DIST = 0.02  # gripper base 2cm above the object
     TABLE_DIST = 0.005  # fingertip 0.5cm above the table
-    POST_GRASP_DIST = 0.05 # move 5cm back upwards after grasping
+    POST_GRASP_DIST = 0.10 # move 10cm back upwards after grasping
 
     NUM_ARM_ATTEMPTS = 3
 
@@ -132,7 +132,7 @@ class Controller(object):
         self._classify_client.wait_for_server()
         rospy.loginfo("Done waiting for classify server.")
 
-        self._torso.set_height(0.4)
+        self._torso.set_height(self.TORSO_HEIGHT)
         ########### FOR DEBUGGING ##################
         self._marker_pub = rospy.Publisher('recycle/object_markers', Marker, queue_size=10)
 
@@ -560,6 +560,7 @@ class Controller(object):
                                         + self.GRIPPER_FINGERTIP_OFFSET
                                         + obj_dim.z
                                         + self.DROPOFF_Z_PADDING)
+        gripper_goal.pose.orientation = self.CRANE_ORIENTATION
         if not self._arm_move_to_pose_attempt(gripper_goal, "bin"):
             # if we can't move to the bin, try to set the obj back down
             self._put_object_down(gripper_goal, grasp_pose, "bin")
