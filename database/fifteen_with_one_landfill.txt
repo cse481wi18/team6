@@ -1,0 +1,4 @@
+compost /home/team6/we_like_these/coffee_white_1.bag /home/team6/we_like_these/labels15/coffee_white_label_1.bag
+compost /home/team6/we_like_these/coffee_white_2.bag /home/team6/we_like_these/labels15/coffee_white_label_2.bag
+recycle /home/team6/we_like_these/can_1.bag /home/team6/we_like_these/labels15/can_label_1.bag
+landfill /home/team6/we_like_these/gardetto_1.bag /home/team6/we_like_these/labels15/gardetto_1_label.bag
