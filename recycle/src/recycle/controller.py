@@ -10,6 +10,7 @@ import utils
 from joint_state_reader import JointStateReader
 from moveit_python import PlanningSceneInterface
 
+from std_msgs.msg import String
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from actionlib_msgs.msg import GoalStatus
@@ -86,7 +87,7 @@ class Controller(object):
     ENV_OBSTACLE_NAME = "obstacle_{}"
     COLL_OBJECT_NAME = "collision_object_{}"
 
-    def __init__(self, move_request_topic, classify_action):
+    def __init__(self, move_request_topic, classify_action, navigation_failure):
         self.RAMP_MESH_FILE = rospy.get_param('ramp_mesh_file', "/home/team6/catkin_ws/src/cse481wi18/recycle/src/recycle/rampMesh.stl")
         self._request_queue = []
         self._move_summary = []
@@ -117,6 +118,8 @@ class Controller(object):
         self._move_request_sub = rospy.Subscriber(move_request_topic,
                                                  ActionPose,
                                                  callback=self._move_request_cb)
+        self._nav_failure_pub = rospy.Publisher(navigation_failure, String, queue_size=5)
+
         # action client to navigate robot
         self._move_base_client = actionlib.SimpleActionClient(MOVE_BASE_ACTION, MoveBaseAction)
         # action client to classify objects
@@ -246,7 +249,8 @@ class Controller(object):
                 self._move_base_client.wait_for_result()
 
                 if not self._move_base_client.get_state() == GoalStatus.SUCCEEDED:
-                    rospy.logwarn("Navigation failed. Give up.")
+                    rospy.logwarn("Navigation failed. Notify UI. Give up.")
+                    self._nav_failure_pub.publish(String(request.name))
                     continue
 
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))

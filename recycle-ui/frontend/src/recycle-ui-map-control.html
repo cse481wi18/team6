@@ -12,6 +12,7 @@
 <link rel="import" href="../bower_components/ros-rviz/ros-rviz.html">
 
 <link rel="import" href="recycle-ui-map-pose.html">
+<link rel="import" href="simple-dialog.html">
 
 <dom-module id="recycle-ui-map-control">
   <template>
@@ -140,12 +141,27 @@
       msg-type="map_annotator/UserAction">
     </ros-topic>
 
+    <ros-topic auto
+      ros="{{ros}}"
+      topic="recycle/navigation_failure"
+      msg-type="std_msgs/String"
+      last-message="{{poseNames}}"
+      on-message="_handleNavigationError">
+    </ros-topic>
+
     <div id="main" class="layout vertical">
       <!--<paper-toolbar id="header">
         <span slot="top" class="title">Map Annotator</span>
         <span slot="top" class="subtitle">{{status}}</span>
       </paper-toolbar>-->
       <div id="content" class="layout horizontal">
+        <simple-dialog id="modal" on-iron-overlay-opened="_patchOverlay" modal role="alertdialog">
+          <p>Failed to navigate to [[failedPoseName]]</p>
+          <div class="buttons">
+            <paper-button dialog-confirm autofocus>Ok</paper-button>
+          </div>
+        </simple-dialog>
+
         <div id="controls">
           <h2>Create Pose</h2>
           <paper-radio-group selected="{{actionSelected}}">
@@ -235,6 +251,18 @@
 
       _handlePoseEvent(evt) {
         this.$.userActions.publish(evt.detail);
+      }
+
+      _handleNavigationError(evt) {
+        this.failedPoseName = evt.detail.data;
+        this.$.modal.open();
+      }
+
+      _patchOverlay(evt) {
+        // Hack from https://github.com/PolymerElements/paper-dialog/issues/7
+        if (evt.target.withBackdrop) {
+          evt.target.parentNode.insertBefore(evt.target.backdropElement, evt.target);
+        }
       }
 
       ready() {

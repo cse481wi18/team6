@@ -14,6 +14,7 @@
 
 	<param name="move_request_topic" value="recycle/move_request" />
 	<param name="classify_action" value="recycle_classifier/classify" />
+	<param name="navigation_failure" value="recycle/navigation_failure" />
 
 	<node pkg="recycle" type="controller_main.py" name="recycle_controller" output="screen" />
 </launch>

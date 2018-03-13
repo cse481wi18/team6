@@ -58,6 +58,7 @@ class MapPoses:
     def _goto(self, action):
         goal_msg = ActionPose()
         goal_msg.action = self._poses[action.name].description
+        goal_msg.name = action.name
         goal_msg.target_pose = PoseStamped()
         goal_msg.target_pose.pose = self._poses[action.name].pose
         goal_msg.target_pose.header.frame_id = 'map'

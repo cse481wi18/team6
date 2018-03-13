@@ -15,8 +15,9 @@ def main():
 
     move_request_topic = rospy.get_param('move_request_topic')
     classify_action = rospy.get_param('classify_action')
+    navigation_failure = rospy.get_param('navigation_failure')
 
-    controller = Controller(move_request_topic, classify_action)
+    controller = Controller(move_request_topic, classify_action, navigation_failure)
     rospy.on_shutdown(controller.shutdown)
     controller.start()
 
