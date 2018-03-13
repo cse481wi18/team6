@@ -86,7 +86,7 @@
           },
           minId: {
             type: Number,
-            value: 0
+            value: -1 // dummy start value to indicate that we're starting at the end
           },
           items: {
             type: Object,
@@ -114,12 +114,12 @@
 
       _nextItems() {
         console.log('Fetching next');
-        this._getItems(this.maxId, NUM_DISPLAY);
+        this._getItems(this.minId, NUM_DISPLAY);
       }
 
       _prevItems() {
         console.log('Fetching prev');
-        this._getItems(this.minId, -1 * NUM_DISPLAY);
+        this._getItems(this.maxId, -1 * NUM_DISPLAY);
       }
 
       _getItems(start, num) {
@@ -144,8 +144,8 @@
 
       _handleCorrectionResult(evt) {
         console.log('Correction: received', evt.detail);
-        // go back 1 before min to "refresh" to get the next 3
-        this._getItems(this.minId - 1, NUM_DISPLAY);
+        // go back 1 after max to "refresh" to get the next 3
+        this._getItems(this.maxId + 1, NUM_DISPLAY);
       }
 
       _handleResponse(evt) {

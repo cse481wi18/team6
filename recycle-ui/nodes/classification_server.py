@@ -15,7 +15,7 @@ def wait_for_time():
     while rospy.Time().now().to_sec() == 0:
         pass
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/temp.db'
 
 class ClassificationServer():
 
@@ -36,9 +36,9 @@ class ClassificationServer():
         rospy.loginfo('log page handler got a message:')
         rospy.loginfo(get_log_page)
         is_reverse_page = get_log_page.page_size < 0
-        sort_direction = 'DESC' if is_reverse_page else 'ASC'
-        log_id_inequality = 'log_id < ' if is_reverse_page else 'log_id > '
-        log_id_inequality += str(get_log_page.starting_log_num)
+        sort_direction = 'ASC' if is_reverse_page else 'DESC'
+        log_id_inequality = 'log_id > ' if is_reverse_page else 'log_id < '
+        log_id_inequality += str(get_log_page.starting_log_num) if get_log_page.starting_log_num >= 0 else '9e9999'
         rospy.loginfo(log_id_inequality)
         rospy.loginfo('sort direction {}'.format(sort_direction))
 
