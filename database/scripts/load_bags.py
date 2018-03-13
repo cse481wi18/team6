@@ -2,8 +2,8 @@
 
 import sqlite3
 
-DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle_less.db'
-TO_INGEST = '/home/team6/catkin_ws/src/cse481wi18/database/less.txt'
+DB_FILE = '/home/team6/catkin_ws/src/cse481wi18/database/recycle.db'
+TO_INGEST = '/home/team6/catkin_ws/src/cse481wi18/database/pop.txt'
 def load_item(item, c):
     true_classification, pointcloud, features = item.split(' ')
     print('logging new {} object with pointcloud: {}, features: {}'.format(true_classification, pointcloud, features))
