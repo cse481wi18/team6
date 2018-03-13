@@ -54,7 +54,7 @@ int main(int argc, char** argv) {
   // ROS_INFO(path);
   // ROS_INFO(label);
   rosbag::Bag bag;
-  bag.open("/home/team6/data/demo_objects/" + path, rosbag::bagmode::Read);
+  bag.open("/home/team6/we_like_these/" + path, rosbag::bagmode::Read);
   std::vector<std::string> topics;
   topics.push_back("head_camera/depth_registered/points");
   rosbag::View view(bag, rosbag::TopicQuery(topics));
@@ -100,8 +100,11 @@ int main(int argc, char** argv) {
     //   std::cerr << "Object " << i << " " << objects[0].dimensions
     //             << std::endl;
     // }
-    return 1;
+    // return 1;
   }
+
+  std::cerr << " Obstacles " << objects.size()
+              << std::endl;
 
   const recycle::Object& object = objects[0];
   recycle_msgs::ObjectFeatures features;
@@ -109,7 +112,7 @@ int main(int argc, char** argv) {
   recycle::ExtractFeatures(object, &features);
 
   rosbag::Bag bag_out;
-  bag_out.open("/home/team6/data/demo_objects/" + label + "_label.bag", rosbag::bagmode::Write);
+  bag_out.open("/home/team6/we_like_these/labels5/" + label + "_label5.bag", rosbag::bagmode::Write);
   bag_out.write("object_features", ros::Time::now(), features);
   bag_out.close();
 

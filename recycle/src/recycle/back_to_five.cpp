@@ -13,19 +13,15 @@ namespace recycle {
     // double weight;
     // ros::param::param("color_weight", weight, 1.0);
 
-    int num_color_buckets;
-    ros::param::param("num_color_buckets", num_color_buckets, 15);
-
     std::vector<double> color_features;
-    color_features.resize(num_color_buckets * num_color_buckets * num_color_buckets); //5, 5^3 = 125
+    color_features.resize(125); //5, 5^3 = 125
     for (size_t i = 0; i < object.cloud->size(); ++i) {
       const pcl::PointXYZRGB& pt = object.cloud->at(i);
       // Reduce the color space to just 5 values (255 / 51) per channel.
-      int bucket_size = 255 / num_color_buckets;
-      int r = std::min(pt.r / bucket_size, num_color_buckets - 1);
-      int g = std::min(pt.g / bucket_size, num_color_buckets - 1);
-      int b = std::min(pt.b / bucket_size, num_color_buckets - 1);
-      int index = r * num_color_buckets * num_color_buckets + g * num_color_buckets + b;
+      int r = std::min(pt.r / 51, 4);
+      int g = std::min(pt.g / 51, 4);
+      int b = std::min(pt.b / 51, 4);
+      int index = r * 25 + g * 5 + b;
       color_features[index] += 1;
     }
 

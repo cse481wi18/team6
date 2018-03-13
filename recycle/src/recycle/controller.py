@@ -43,6 +43,7 @@ class Controller(object):
 
     NUM_ARM_ATTEMPTS = 3
 
+    TUCKING_MOVE_BACK_DIST = -0.1
     TUCKED_POSITION_INFO = {'position':{'x':0.0577042549849,
                                         'y':-0.14065502584,
                                         'z':0.95760756731},
@@ -102,6 +103,7 @@ class Controller(object):
         self._arm = fetch_api.Arm()
         self._gripper = fetch_api.Gripper()
         self._torso = fetch_api.Torso()
+        self._base = fetch_api.Base()
 
         # init joint state reader
         self._reader = JointStateReader()
@@ -323,10 +325,13 @@ class Controller(object):
                         else:
                             rospy.logerr("Table height too low. Tried " + str(TABLE_HEIGHT_FAILURE) + " times, give up.")
                             break
-                # TODO
-                if classifier_result and self._add_env_obstacles(classifier_result):
-                    self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
-                    self._remove_env_obstacles()
+
+                if classifier_result:
+                    rospy.loginfo("Tucking arm away..")
+                    self._base.move_forward(self.TUCKING_MOVE_BACK_DIST)
+                    if self._add_env_obstacles(classifier_result, x_offset=self.TUCKING_MOVE_BACK_DIST):
+                        self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
+                        self._remove_env_obstacles()
 
             elif request.action == "rest":
                 pass
@@ -356,12 +361,13 @@ class Controller(object):
             name = self.ENV_OBSTACLE_NAME.format(i)
             self._planning_scene.removeCollisionObject(name, wait=True)
 
-    def _add_env_obstacles(self, classifier_result):
+    def _add_env_obstacles(self, classifier_result, x_offset=0):
         rospy.loginfo("ADD TABLE")
         self._num_prev_obstacles = classifier_result.num_obstacles
 
         for i in range(classifier_result.num_obstacles):
             obstacle_pose = classifier_result.obstacle_poses[i]
+            obstacle_pose.pose.position.x += x_offset
             obstacle_dim = classifier_result.obstacle_dimensions[i]
 
             flip_obstacles = rospy.get_param('flip_obstacles', True)
