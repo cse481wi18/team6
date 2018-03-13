@@ -1,13 +1,4 @@
 <launch>
-	<arg name="data_dir" />
-
-	<!-- Segmentation -->
-	<param name="ec_cluster_tolerance" value="0.03" />s
-	<param name="ec_min_cluster_size" value="50" />
-	<param name="ec_max_cluster_size" value="7500" />
-	<param name="distance_above_plane" value="0.01" />
-	<param name="table_obstacle_padding" value="0" />
-
 	<!-- Cropping -->
 	<!-- Classification -->
 	<param name="crop_min_x" value="-1" />
@@ -17,23 +8,33 @@
 	<param name="crop_max_x" value="1.2" />
 	<param name="crop_max_y" value="0.5" />
 	<param name="crop_max_z" value="1.75" />
-	
+
 	<!-- Adding New Item -->
-<!-- 	<param name="crop_min_x_add" value="0.5" />
+	<param name="crop_min_x_add" value="0.5" />
 	<param name="crop_min_y_add" value="-0.3" />
 	<param name="crop_min_z_add" value="0.5" />
 
 	<param name="crop_max_x_add" value="1" />
 	<param name="crop_max_y_add" value="0.3" />
-	<param name="crop_max_z_add" value="1" /> -->
+	<param name="crop_max_z_add" value="1" />
+
+	<!-- Downsapling -->
+	<param name="voxel_size" value="0.01" />
+
+	<!-- Segmentation -->
+	<param name="ec_cluster_tolerance" value="0.03" />
+	<param name="ec_min_cluster_size" value="50" />
+	<param name="ec_max_cluster_size" value="7500" />
+	<param name="distance_above_plane" value="0.01" />
+	<param name="table_obstacle_padding" value="0" />
 
 	<!-- Classification-->
-	<param name="landfill_confidence_threshold" value="0.4" />	
+	<param name="landfill_confidence_threshold" value="0.4" />
 	<param name="color_weight" value="10" />
 	<param name="size weight" value="15" />
 
-	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen" >
-		<!-- <remap from="cloud_in" to="mock_point_cloud" /> -->
-		<remap from="cloud_in" to="/head_camera/depth_registered/points" />
+	<node pkg="recycle" type="classifier_main" name="recycle_classifier" output="screen">
+		<remap from="cloud_in" to="mock_point_cloud" />
+		<!-- <remap from="cloud_in" to="/head_camera/depth_registered/points" /> -->
 	</node>
 </launch>

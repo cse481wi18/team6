@@ -12,7 +12,7 @@
 	</include>
 
 
-  	<node pkg="recycle" type="logger_server.py" name="logger" />
+  	<node pkg="recycle" type="logger_server.py" name="logger" output="screen" />
 
 	<!-- Run Classification ActionServer -->
 	<!-- Run Controller node -->

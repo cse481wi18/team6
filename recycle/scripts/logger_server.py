@@ -21,14 +21,14 @@ class LogServer:
         self._logging_server.start()
 
     def _handle_logging(self, log_goal):
-        rospy.logerr('Logging item to db')
+        rospy.loginfo('Logging item to db')
         log_item = log_goal.log_item
 
-        rospy.logerr(DB_FILE)
+        rospy.loginfo(DB_FILE)
         conn = sqlite3.connect(DB_FILE)
         c = conn.cursor()
         if log_item.log_id >= 0:
-            rospy.logerr('updating record')
+            rospy.loginfo('updating record')
             c.execute('''
                 UPDATE classification_log
                 SET predicted_category = ?,
@@ -41,8 +41,8 @@ class LogServer:
                     log_item.pointcloud_file_path, log_item.feature_file_path, log_item.log_id))
         else:
             # new item
-            rospy.logerr('inserting new record')
-            rospy.logerr(log_item)
+            rospy.loginfo('inserting new record')
+            rospy.loginfo(log_item)
             c.execute('''
                 INSERT INTO classification_log (
                     predicted_category,
@@ -54,7 +54,7 @@ class LogServer:
                 (log_item.predicted_category, log_item.actual_category, log_item.image_file_path,
                 log_item.pointcloud_file_path, log_item.feature_file_path))
         conn.commit()
-        rospy.logerr('ITEM INSERTED')
+        rospy.loginfo('ITEM INSERTED')
         conn.close()
         self._logging_server.set_succeeded(DbLogResult(True))
 

@@ -1,4 +1,3 @@
-// TODO: add includes, etc.
 #include "recycle/downsample.h"
 #include "pcl/filters/voxel_grid.h"
 #include "pcl/common/common.h"

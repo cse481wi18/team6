@@ -12,6 +12,7 @@ from moveit_python import PlanningSceneInterface
 
 from geometry_msgs.msg import Pose, PoseStamped, Quaternion, Vector3
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+from actionlib_msgs.msg import GoalStatus
 from moveit_msgs.msg import OrientationConstraint
 from recycle_msgs.msg import ActionPose
 from recycle_msgs.msg import ClassifyAction, ClassifyActionGoal
@@ -47,7 +48,7 @@ class Controller(object):
                             'orientation':Quaternion(-0.52511048317,
                                                      -0.500718176365,
                                                      -0.496271342039,
-                                                      0.476712852716)} 
+                                                      0.476712852716)}
 
     CRANE_ORIENTATION = Quaternion(0.00878962595016,
                                    0.711250066757,
@@ -76,12 +77,13 @@ class Controller(object):
     }
 
     PRE_SCAN_POSES = {
-        'compost': {'x': 0.15, 'y': -0.50, 'z': 0.95},
-        'landfill': {'x': 0.15, 'y': 0.50, 'z': 0.95},
-        'recycle': {'x': 0.15, 'y': 0.50, 'z': 0.95}
+        'compost': {'x': 0.10, 'y': -0.50, 'z': 0.85},
+        'landfill': {'x': 0.10, 'y': 0.50, 'z': 0.85},
+        'recycle': {'x': 0.10, 'y': 0.50, 'z': 0.85}
     }
 
     # obstacle names
+    ENV_OBSTACLE_NAME = "obstacle_{}"
     COLL_OBJECT_NAME = "collision_object_{}"
 
     def __init__(self, move_request_topic, classify_action):
@@ -139,7 +141,7 @@ class Controller(object):
         ps.header.frame_id = 'base_link'
         ps.pose.position.x = self.TUCKED_POSITION_INFO['position']['x']
         ps.pose.position.y = self.TUCKED_POSITION_INFO['position']['y']
-        ps.pose.position.z = self.TUCKED_POSITION_INFO['position']['z'] 
+        ps.pose.position.z = self.TUCKED_POSITION_INFO['position']['z']
         ps.pose.orientation = self.TUCKED_POSITION_INFO['orientation']
         return ps
 
@@ -234,6 +236,7 @@ class Controller(object):
             rospy.loginfo("Num requests left in q: {}".format(len(self._request_queue)))
 
             # navigate to target pose
+            arrived = False
             do_navigation = rospy.get_param("do_navigation", True)
             if do_navigation:
                 rospy.loginfo("Navigating..")
@@ -241,11 +244,17 @@ class Controller(object):
                 goal.target_pose = request.target_pose
                 self._move_base_client.send_goal(goal)
                 self._move_base_client.wait_for_result()
+
+                if not self._move_base_client.get_state() == GoalStatus.SUCCEEDED:
+                    rospy.logwarn("Navigation failed. Give up.")
+                    continue
+
             rospy.loginfo("Arrived at target. Performing \'{}\' action...".format(request.action))
 
             # perform action once at target pose
             if request.action == "bus":
                 # Re-scan loop
+                classifier_result = None
                 while True:
                     self._torso.set_height(self.TORSO_HEIGHT)
                     self._head.look_at(*self.LOOK_AT_TABLE)
@@ -288,11 +297,10 @@ class Controller(object):
 
                         # now, bus the classified objects
                         bussed = self._bus_objects(classifier_result)
-                        
+
                         # remove the obstacles now that we are done bussing
                         self._remove_env_obstacles()
                         self._remove_object_obstacles(classifier_result)
-
 
                         if not bussed:
                             failed_to_bus_all += 1
@@ -311,7 +319,11 @@ class Controller(object):
                         else:
                             rospy.logerr("Table height too low. Tried " + str(TABLE_HEIGHT_FAILURE) + " times, give up.")
                             break
-                self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
+                # TODO
+                if classifier_result and self._add_env_obstacles(classifier_result):
+                    self._arm_move_to_pose_attempt(self._tucked_position, 'Tucking away')
+                    self._remove_env_obstacles()
+
             elif request.action == "rest":
                 pass
 
@@ -337,7 +349,7 @@ class Controller(object):
     def _remove_env_obstacles(self):
         rospy.loginfo("Removing env obstacles")
         for i in range(self._num_prev_obstacles):
-            name = 'obstacle_{}'.format(i)
+            name = self.ENV_OBSTACLE_NAME.format(i)
             self._planning_scene.removeCollisionObject(name, wait=True)
 
     def _add_env_obstacles(self, classifier_result):
@@ -355,7 +367,7 @@ class Controller(object):
             table_extension = rospy.get_param('table_extension', 2)
             if flip_obstacles:
                 obstacle_dim.x *= table_extension
-                self._planning_scene.addBox('obstalce_' + str(i),
+                self._planning_scene.addBox(self.ENV_OBSTACLE_NAME.format(i),
                                         obstacle_dim.y,  # TODO hacky
                                         obstacle_dim.x,
                                         obstacle_dim.z,
@@ -365,7 +377,7 @@ class Controller(object):
                                         wait=True)
             else: # Don't flip. Double y dimension
                 obstacle_dim.y *= table_extension
-                self._planning_scene.addBox('obstalce_' + str(i),
+                self._planning_scene.addBox(self.ENV_OBSTACLE_NAME.format(i),
                                         obstacle_dim.x,
                                         obstacle_dim.y,  # TODO hacky
                                         obstacle_dim.z,
@@ -514,10 +526,10 @@ class Controller(object):
 
         # 4.5 Check if it's actually holding the object.
         gripper_vals = self._reader.get_joints(['l_gripper_finger_joint', 'r_gripper_finger_joint'])
-        if all([i < 0.0001 for i in gripper_vals]):
+        FINGER_DIST_THRESH = rospy.get_param("finger_dist_thresh", 0.001)
+        if any([i < FINGER_DIST_THRESH for i in gripper_vals]):
             # Gripper is completely closed. It's not actually holding anything
             rospy.logwarn("Gripper empty.")
-            # TODO add single object obstacle back
             self._add_single_object_obstacle(obj_posestamped, obj_dim, self.COLL_OBJECT_NAME.format(i))
             return False # rescan. might touch object
 

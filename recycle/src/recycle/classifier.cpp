@@ -1,13 +1,13 @@
 #include "recycle/classifier.h"
 
 namespace recycle {
-  Classifier::Classifier(std::string database_path, 
+  Classifier::Classifier(std::string database_path,
                         std::string classify_name,
                         std::string add_item_name,
                         std::string logger_name) :
     classifier_as_(nh_, classify_name, boost::bind(&Classifier::ClassifierActionCallback, this, _1), false),
     add_item_as_(nh_, add_item_name, boost::bind(&Classifier::AddItemActionCallback, this, _1), false),
-    logging_ac_(logger_name, true), 
+    logging_ac_(logger_name, true),
     database_path_(database_path),
     classifier_action_name_(classify_name),
     add_item_action_name_(add_item_name),
@@ -26,7 +26,7 @@ namespace recycle {
     recycle_msgs::ClassifyResult result;
 
     ROS_INFO("CLASSIFYING");
-    
+
     ros::Time now = ros::Time::now();
     sensor_msgs::PointCloud2ConstPtr msg;
     while (true) {
@@ -34,21 +34,21 @@ namespace recycle {
       ros::Time msg_time = msg->header.stamp;
       if (now < msg_time) break;
     }
+    ROS_INFO_STREAM("Frame is _____________ " << msg->header.frame_id);
+    tf::TransformListener tf_listener;
+    tf_listener.waitForTransform("base_link", msg->header.frame_id,
+                                 ros::Time(0), ros::Duration(5.0));
+    tf::StampedTransform transform;
+    try {
+      tf_listener.lookupTransform("base_link", msg->header.frame_id,
+                                  ros::Time(0), transform);
+    } catch (tf::LookupException& e) {
+      std::cerr << e.what() << std::endl;
+    } catch (tf::ExtrapolationException& e) {
+      std::cerr << e.what() << std::endl;
+    }
 
-    tf::TransformListener tf_listener;                                                    
-    tf_listener.waitForTransform("base_link", msg->header.frame_id,                     
-                                 ros::Time(0), ros::Duration(5.0));                       
-    tf::StampedTransform transform;                                                       
-    try {                                                                                 
-      tf_listener.lookupTransform("base_link", msg->header.frame_id,                    
-                                  ros::Time(0), transform);                               
-    } catch (tf::LookupException& e) {                                                    
-      std::cerr << e.what() << std::endl;                                                 
-    } catch (tf::ExtrapolationException& e) {                                             
-      std::cerr << e.what() << std::endl;                                                 
-    }                                    
-                                                                                            
-    sensor_msgs::PointCloud2 cloud_out;                                                   
+    sensor_msgs::PointCloud2 cloud_out;
     pcl_ros::transformPointCloud("base_link", transform, *msg, cloud_out);
 
     PointCloudC::Ptr cloud(new PointCloudC());
@@ -66,7 +66,7 @@ namespace recycle {
     segmenter.SegmentAndClassify(downsampled, &result, &logging_ac_);
     classifier_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
-  } 
+  }
 
   void Classifier::AddItemActionCallback(const recycle_msgs::AddItemGoalConstPtr &goal)  {
     //Create result message
@@ -79,31 +79,31 @@ namespace recycle {
       ros::Time msg_time = msg->header.stamp;
       if (now < msg_time) break;
     }
-    
-    tf::TransformListener tf_listener;                                                    
-    tf_listener.waitForTransform("base_link", msg->header.frame_id,                     
-                                 ros::Time(0), ros::Duration(5.0));                       
-    tf::StampedTransform transform;                                                       
-    try {                                                                                 
-      tf_listener.lookupTransform("base_link", msg->header.frame_id,                    
-                                  ros::Time(0), transform);                               
-    } catch (tf::LookupException& e) {                                                    
-      std::cerr << e.what() << std::endl;                                                 
-    } catch (tf::ExtrapolationException& e) {                                             
-      std::cerr << e.what() << std::endl;                                                 
-    } 
-     
+
+    tf::TransformListener tf_listener;
+    tf_listener.waitForTransform("base_link", msg->header.frame_id,
+                                 ros::Time(0), ros::Duration(5.0));
+    tf::StampedTransform transform;
+    try {
+      tf_listener.lookupTransform("base_link", msg->header.frame_id,
+                                  ros::Time(0), transform);
+    } catch (tf::LookupException& e) {
+      std::cerr << e.what() << std::endl;
+    } catch (tf::ExtrapolationException& e) {
+      std::cerr << e.what() << std::endl;
+    }
+
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
 
     Cropper cropper(crop_pub_);
     PointCloudC::Ptr cropped = cropper.Crop(cloud, true);
     Downsampler downsampler(downsample_pub_);
-    // PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
+    PointCloudC::Ptr downsampled = downsampler.Downsample(cropped);
     ROS_INFO("Segmenting");
     recycle::Segmenter segmenter(table_pub_, above_table_pub_);
-    segmenter.AddItem(goal->category, cropped, &result);
+    segmenter.AddItem(goal->category, downsampled, &result);
     add_item_as_.setSucceeded(result);
     ROS_INFO("REPLIED");
-  } 
+  }
 }

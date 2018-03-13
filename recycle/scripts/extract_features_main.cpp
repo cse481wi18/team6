@@ -99,7 +99,6 @@ int main(int argc, char** argv) {
     // for (int i = 0; i < objects.size(); i++) {
     //   std::cerr << "Object " << i << " " << objects[0].dimensions
     //             << std::endl;
-      
     // }
     return 1;
   }
