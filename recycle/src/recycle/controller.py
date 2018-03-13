@@ -364,9 +364,6 @@ class Controller(object):
             obstacle_pose = classifier_result.obstacle_poses[i]
             obstacle_dim = classifier_result.obstacle_dimensions[i]
 
-            rospy.loginfo(obstacle_pose)
-            rospy.loginfo(obstacle_dim)
-
             flip_obstacles = rospy.get_param('flip_obstacles', True)
             table_extension = rospy.get_param('table_extension', 2)
             if flip_obstacles:
@@ -432,6 +429,7 @@ class Controller(object):
             category = classifier_result.classifications[i]
             confidence = classifier_result.confidence[i]
 
+            rospy.loginfo("Object {}: {} with {}".format(i, category, confidence))
             pickedup = self._pickup_object(i, obj_posestamped, obj_dim, category)
             self._print_move_summary()
             rospy.loginfo("Object {}: {} with {}".format(i, category, confidence))

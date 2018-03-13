@@ -80,7 +80,7 @@ int ObjectRecognizer::LoadData(const std::string& database_path) {
 
   std::string statement = "SELECT actual_category, feature_file_path "
                           "FROM classification_log " 
-                          "WHERE actual_category is not NULL AND actual_category <> ''";
+                          "WHERE (actual_category is not NULL AND actual_category <> '')";
   
   rc = sqlite3_exec(db, statement.c_str(), SQLCallback, static_cast<void*>(&dataset_), &zErrMsg);
 

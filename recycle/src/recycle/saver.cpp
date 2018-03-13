@@ -50,11 +50,11 @@ int Saver::SaveFiles(Object object,
   pcl::toROSMsg(*(object.cloud), save_cloud_msg);
 
   tf::TransformListener tf_listener;
-  tf_listener.waitForTransform("head_camera_rgb_optical_frame", save_cloud_msg.header.frame_id,
+  tf_listener.waitForTransform("base_link", save_cloud_msg.header.frame_id,
                                ros::Time(0), ros::Duration(5.0));
   tf::StampedTransform transform;
   try {
-    tf_listener.lookupTransform("head_camera_rgb_optical_frame", save_cloud_msg.header.frame_id,
+    tf_listener.lookupTransform("base_link", save_cloud_msg.header.frame_id,
                                 ros::Time(0), transform);
   } catch (tf::LookupException& e) {
     std::cerr << e.what() << std::endl;
@@ -65,7 +65,7 @@ int Saver::SaveFiles(Object object,
   }
 
   sensor_msgs::PointCloud2 cloud_out;
-  pcl_ros::transformPointCloud("head_camera_rgb_optical_frame", transform, save_cloud_msg, cloud_out);
+  pcl_ros::transformPointCloud("base_link", transform, save_cloud_msg, cloud_out);
 
   rosbag::Bag bag_out;
   bag_out.open(pc_path, rosbag::bagmode::Write);
