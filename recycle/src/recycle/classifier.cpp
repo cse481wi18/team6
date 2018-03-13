@@ -34,7 +34,7 @@ namespace recycle {
       ros::Time msg_time = msg->header.stamp;
       if (now < msg_time) break;
     }
-    ROS_INFO_STREAM("Frame is _____________ " << msg->header.frame_id);
+    // ROS_INFO_STREAM("Frame is _____________ " << msg->header.frame_id);
     tf::TransformListener tf_listener;
     tf_listener.waitForTransform("base_link", msg->header.frame_id,
                                  ros::Time(0), ros::Duration(5.0));

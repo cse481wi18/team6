@@ -5,7 +5,7 @@
 namespace recycle {
   typedef pcl::PointXYZRGB PointC;
   typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudC;
-  
+
   Downsampler::Downsampler(ros::Publisher pub): pub_(pub) {}
 
   PointCloudC::Ptr Downsampler::Downsample(PointCloudC::Ptr cloud) {

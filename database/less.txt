@@ -1,0 +1,4 @@
+recycle /home/team6/data/demo_objects/can_1.bag /home/team6/data/demo_objects/db_labels/can_1_label.bag
+recycle /home/team6/data/demo_objects/coffee_black_0.bag /home/team6/data/demo_objects/db_labels/coffee_black_0_label.bag
+compost /home/team6/data/demo_objects/coffee_white_0.bag /home/team6/data/demo_objects/db_labels/coffee_white_0_label.bag
+landfill /home/team6/data/demo_objects/gardetto_1.bag /home/team6/data/demo_objects/db_labels/gardetto_1_label.bag
