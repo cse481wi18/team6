@@ -79,6 +79,19 @@ namespace recycle {
       ros::Time msg_time = msg->header.stamp;
       if (now < msg_time) break;
     }
+    
+    tf::TransformListener tf_listener;                                                    
+    tf_listener.waitForTransform("base_link", msg->header.frame_id,                     
+                                 ros::Time(0), ros::Duration(5.0));                       
+    tf::StampedTransform transform;                                                       
+    try {                                                                                 
+      tf_listener.lookupTransform("base_link", msg->header.frame_id,                    
+                                  ros::Time(0), transform);                               
+    } catch (tf::LookupException& e) {                                                    
+      std::cerr << e.what() << std::endl;                                                 
+    } catch (tf::ExtrapolationException& e) {                                             
+      std::cerr << e.what() << std::endl;                                                 
+    } 
      
     PointCloudC::Ptr cloud(new PointCloudC());
     pcl::fromROSMsg(* msg, *cloud);
